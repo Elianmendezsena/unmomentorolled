@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2A1220">
+<meta name="theme-color" content="#14213D">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Caja">
@@ -401,27 +401,27 @@ button,a,select,input,.tile,.go{touch-action:manipulation}
   .hdr,#view{animation:vfade .35s ease-out}
 }
 /* ═══ Identidad Un Momento Rolled ═══
-   Colores del logo: magenta #E02070 y tinta ciruela. Fondo "leche" rosado, encabezado ciruela,
+   Paleta azul noche: encabezado y tinta azul marino, fondo blanco azulado, acento azul; el rosa del logo queda en el logo y en los helados.
    cada categoría con su color e ícono, y el espiral del helado enrollado como marca de agua. */
 :root{
   --f-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
-  --bg:#FFF4F6; --card:#FFFFFF; --soft:#FCE8EE; --ink:#2A1220; --muted:#7B6272; --line:#F0D6DF;
-  --accent:#E02070; --on-accent:#FFFFFF; --pay:#E02070; --on-pay:#FFFFFF;
-  --hdr:#2A1220; --on-hdr:#FFF1F5; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
+  --bg:#F3F6FB; --card:#FFFFFF; --soft:#E6ECF7; --ink:#14213D; --muted:#5D6B86; --line:#DAE2F0;
+  --accent:#2F6BDB; --on-accent:#FFFFFF; --pay:#2F6BDB; --on-pay:#FFFFFF;
+  --hdr:#14213D; --on-hdr:#EEF3FF; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
   --h-helados:#F0508C; --h-frio:#3F9BEA; --h-paletas:#FF9433; --h-palomitas:#F2B90C; --h-algodon:#A67CF0; --h-extras:#2FB886;
-  --shadow:0 1px 2px rgba(42,18,32,.05),0 8px 22px rgba(42,18,32,.07);
+  --shadow:0 1px 2px rgba(20,33,61,.05),0 8px 22px rgba(20,33,61,.07);
   --hue:var(--accent); --r:18px; --swirl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 12m0-1.2a1.2 1.2 0 0 1 2.4 0a3.6 3.6 0 0 1-7.2 0a6 6 0 0 1 12 0a8.4 8.4 0 0 1-16.8 0a10.8 10.8 0 0 1 21.6 0' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#1A0A13; --card:#27121E; --soft:#2F1726; --ink:#FFEFF4; --muted:#C9A6B6; --line:#43232F;
-    --accent:#FF5C98; --on-accent:#2A0E19; --pay:#FF5C98; --on-pay:#2A0E19;
-    --hdr:#10050B; --on-hdr:#FFEFF4; --shadow:0 1px 2px rgba(0,0,0,.4);
+    --bg:#0B1220; --card:#121B2E; --soft:#182340; --ink:#E8EEFB; --muted:#9AA9C7; --line:#26334F;
+    --accent:#6C9BFF; --on-accent:#0B1220; --pay:#6C9BFF; --on-pay:#0B1220;
+    --hdr:#070C17; --on-hdr:#E8EEFB; --shadow:0 1px 2px rgba(0,0,0,.4);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#1A0A13; --card:#27121E; --soft:#2F1726; --ink:#FFEFF4; --muted:#C9A6B6; --line:#43232F;
-  --accent:#FF5C98; --on-accent:#2A0E19; --pay:#FF5C98; --on-pay:#2A0E19; --hdr:#10050B; --on-hdr:#FFEFF4;
+  --bg:#0B1220; --card:#121B2E; --soft:#182340; --ink:#E8EEFB; --muted:#9AA9C7; --line:#26334F;
+  --accent:#6C9BFF; --on-accent:#0B1220; --pay:#6C9BFF; --on-pay:#0B1220; --hdr:#070C17; --on-hdr:#E8EEFB;
 }
 body{background:var(--bg)}
 .num,.stat b,.line .amt,.step output,.tile .pr,.cstrip .cs-kv b{font-family:var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -438,7 +438,7 @@ body{background:var(--bg)}
 .cash select{border-color:color-mix(in srgb,var(--on-hdr) 30%,transparent)}
 .cstrip{background:color-mix(in srgb,var(--hdr) 92%,var(--accent));border-top:1px solid color-mix(in srgb,var(--on-hdr) 12%,transparent);color:var(--on-hdr)}
 .cstrip .cs-kv{color:color-mix(in srgb,var(--on-hdr) 70%,transparent)}
-.cstrip a{color:#FFB3CE}
+.cstrip a{color:#A9C4FF}
 /* Botones, chips y títulos */
 .btn{border-radius:14px}
 .btn.pri{background:var(--ink);color:var(--card)}
@@ -460,12 +460,12 @@ h2{letter-spacing:-.015em}
 .line{border-top:1px dashed var(--line)}
 .step{border-radius:12px}
 /* Mosaicos de producto: color e ícono por categoría, espiral de marca de agua */
-.cat-helados{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M7 11h10l-5 12z'/%3E%3Ccircle cx='12' cy='7' r='5.2'/%3E%3C/svg%3E")}
-.cat-frio{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M6 7h12l-1.6 15H7.6z'/%3E%3Cpath d='M14 1.5l1.2.5-1.4 4.5h-1.6z'/%3E%3C/svg%3E")}
-.cat-paletas{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Crect x='6.5' y='1.5' width='11' height='15' rx='5.5'/%3E%3Crect x='10.8' y='15' width='2.4' height='7.5' rx='1.2'/%3E%3C/svg%3E")}
-.cat-palomitas{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M5 11h14l-2 12H7z'/%3E%3Ccircle cx='8' cy='8' r='3.2'/%3E%3Ccircle cx='12' cy='6' r='3.2'/%3E%3Ccircle cx='16' cy='8' r='3.2'/%3E%3C/svg%3E")}
-.cat-algodon{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Ccircle cx='8.5' cy='10' r='4.5'/%3E%3Ccircle cx='15.5' cy='10' r='4.5'/%3E%3Ccircle cx='12' cy='6.5' r='4.5'/%3E%3Crect x='11' y='13' width='2' height='10' rx='1'/%3E%3C/svg%3E")}
-.cat-extras{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M12 1.5l2.4 7.1 7.1 2.4-7.1 2.4L12 20.5l-2.4-7.1L2.5 11l7.1-2.4z'/%3E%3C/svg%3E")}
+.cat-helados{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2314213D'%3E%3Cpath d='M7 11h10l-5 12z'/%3E%3Ccircle cx='12' cy='7' r='5.2'/%3E%3C/svg%3E")}
+.cat-frio{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2314213D'%3E%3Cpath d='M6 7h12l-1.6 15H7.6z'/%3E%3Cpath d='M14 1.5l1.2.5-1.4 4.5h-1.6z'/%3E%3C/svg%3E")}
+.cat-paletas{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2314213D'%3E%3Crect x='6.5' y='1.5' width='11' height='15' rx='5.5'/%3E%3Crect x='10.8' y='15' width='2.4' height='7.5' rx='1.2'/%3E%3C/svg%3E")}
+.cat-palomitas{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2314213D'%3E%3Cpath d='M5 11h14l-2 12H7z'/%3E%3Ccircle cx='8' cy='8' r='3.2'/%3E%3Ccircle cx='12' cy='6' r='3.2'/%3E%3Ccircle cx='16' cy='8' r='3.2'/%3E%3C/svg%3E")}
+.cat-algodon{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2314213D'%3E%3Ccircle cx='8.5' cy='10' r='4.5'/%3E%3Ccircle cx='15.5' cy='10' r='4.5'/%3E%3Ccircle cx='12' cy='6.5' r='4.5'/%3E%3Crect x='11' y='13' width='2' height='10' rx='1'/%3E%3C/svg%3E")}
+.cat-extras{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2314213D'%3E%3Cpath d='M12 1.5l2.4 7.1 7.1 2.4-7.1 2.4L12 20.5l-2.4-7.1L2.5 11l7.1-2.4z'/%3E%3C/svg%3E")}
 .tile{min-height:124px;padding:56px 12px 12px;border-radius:20px;overflow:hidden;
   background:color-mix(in srgb,var(--hue) 11%,var(--card));border-color:color-mix(in srgb,var(--hue) 32%,var(--line));justify-content:flex-end;gap:4px}
 .tile::before{content:"";position:absolute;left:12px;top:12px;width:36px;height:36px;border-radius:13px;background:var(--ico) center/22px 22px no-repeat,var(--hue);box-shadow:0 3px 8px color-mix(in srgb,var(--hue) 40%,transparent)}
@@ -480,10 +480,10 @@ h2{letter-spacing:-.015em}
 .tile .qty{background:var(--accent);color:var(--on-accent);box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 45%,transparent)}
 .sk i{border-radius:20px}
 /* Inicio de sesión */
-.gate{background:radial-gradient(1200px 600px at 85% -10%,color-mix(in srgb,var(--accent) 45%,transparent),transparent 60%),radial-gradient(900px 500px at -10% 110%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 60%),#2A1220}
+.gate{background:radial-gradient(1200px 600px at 85% -10%,color-mix(in srgb,var(--accent) 45%,transparent),transparent 60%),radial-gradient(900px 500px at -10% 110%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 60%),#14213D}
 .gate .box{border-radius:26px;border:0;box-shadow:0 30px 80px rgba(0,0,0,.45);padding:30px 26px}
 .gate .box .btn{background:var(--accent);color:var(--on-accent);box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 40%,transparent);border:0}
-.gate .glogo{border:0;background:#fff;box-shadow:0 6px 18px rgba(42,18,32,.12);height:74px}
+.gate .glogo{border:0;background:#fff;box-shadow:0 6px 18px rgba(20,33,61,.12);height:74px}
 .gate h1{font-size:28px;letter-spacing:-.02em}
 </style>
 </head>
