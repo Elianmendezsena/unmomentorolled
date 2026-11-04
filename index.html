@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#3B2A20">
+<meta name="theme-color" content="#2A1220">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Caja">
@@ -400,6 +400,91 @@ button,a,select,input,.tile,.go{touch-action:manipulation}
   @keyframes gateout{to{opacity:0;transform:scale(1.02)}}
   .hdr,#view{animation:vfade .35s ease-out}
 }
+/* ═══ Identidad Un Momento Rolled ═══
+   Colores del logo: magenta #E02070 y tinta ciruela. Fondo "leche" rosado, encabezado ciruela,
+   cada categoría con su color e ícono, y el espiral del helado enrollado como marca de agua. */
+:root{
+  --f-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --bg:#FFF4F6; --card:#FFFFFF; --soft:#FCE8EE; --ink:#2A1220; --muted:#7B6272; --line:#F0D6DF;
+  --accent:#E02070; --on-accent:#FFFFFF; --pay:#E02070; --on-pay:#FFFFFF;
+  --hdr:#2A1220; --on-hdr:#FFF1F5; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
+  --h-helados:#F0508C; --h-frio:#3F9BEA; --h-paletas:#FF9433; --h-palomitas:#F2B90C; --h-algodon:#A67CF0; --h-extras:#2FB886;
+  --shadow:0 1px 2px rgba(42,18,32,.05),0 8px 22px rgba(42,18,32,.07);
+  --hue:var(--accent); --r:18px; --swirl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 12m0-1.2a1.2 1.2 0 0 1 2.4 0a3.6 3.6 0 0 1-7.2 0a6 6 0 0 1 12 0a8.4 8.4 0 0 1-16.8 0a10.8 10.8 0 0 1 21.6 0' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A0A13; --card:#27121E; --soft:#2F1726; --ink:#FFEFF4; --muted:#C9A6B6; --line:#43232F;
+    --accent:#FF5C98; --on-accent:#2A0E19; --pay:#FF5C98; --on-pay:#2A0E19;
+    --hdr:#10050B; --on-hdr:#FFEFF4; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A0A13; --card:#27121E; --soft:#2F1726; --ink:#FFEFF4; --muted:#C9A6B6; --line:#43232F;
+  --accent:#FF5C98; --on-accent:#2A0E19; --pay:#FF5C98; --on-pay:#2A0E19; --hdr:#10050B; --on-hdr:#FFEFF4;
+}
+body{background:var(--bg)}
+.num,.stat b,.line .amt,.step output,.tile .pr,.cstrip .cs-kv b{font-family:var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.num{font-weight:700}
+/* Encabezado ciruela con pestañas en píldora */
+.hdr{border-bottom:0;box-shadow:0 2px 0 var(--accent)}
+.brand{color:var(--on-hdr);font-size:22px;letter-spacing:-.01em}
+.nav{gap:6px}
+.nav a{padding:9px 15px;border-radius:999px;opacity:.82;transition:background-color .18s,color .18s,opacity .18s}
+.nav a:hover{opacity:1;background:color-mix(in srgb,var(--on-hdr) 12%,transparent)}
+.nav a[aria-current="page"]{opacity:1;box-shadow:none;background:var(--accent);color:var(--on-accent);border-radius:999px}
+.hdr .btn{background:transparent;color:var(--on-hdr);border-color:color-mix(in srgb,var(--on-hdr) 30%,transparent);min-height:40px}
+.hdr .btn:hover:not(:disabled){background:color-mix(in srgb,var(--on-hdr) 12%,transparent);border-color:color-mix(in srgb,var(--on-hdr) 55%,transparent);box-shadow:none}
+.cash select{border-color:color-mix(in srgb,var(--on-hdr) 30%,transparent)}
+.cstrip{background:color-mix(in srgb,var(--hdr) 92%,var(--accent));border-top:1px solid color-mix(in srgb,var(--on-hdr) 12%,transparent);color:var(--on-hdr)}
+.cstrip .cs-kv{color:color-mix(in srgb,var(--on-hdr) 70%,transparent)}
+.cstrip a{color:#FFB3CE}
+/* Botones, chips y títulos */
+.btn{border-radius:14px}
+.btn.pri{background:var(--ink);color:var(--card)}
+.btn.pay{box-shadow:0 8px 20px color-mix(in srgb,var(--pay) 38%,transparent);border-radius:16px}
+.btn.pay:hover:not(:disabled){box-shadow:0 10px 26px color-mix(in srgb,var(--pay) 48%,transparent)}
+.chip{border-radius:999px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+h2{letter-spacing:-.015em}
+.cat-head{font:800 20px/1.1 var(--f-display);text-transform:none;letter-spacing:-.015em;color:var(--ink);margin:26px 0 10px}
+.card,.order,.sum{border-color:var(--line);box-shadow:var(--shadow)}
+.stat small{text-transform:none;letter-spacing:0;font-size:13px;font-weight:600}
+.stat:first-child{background:color-mix(in srgb,var(--accent) 9%,var(--card))}
+.stat:first-child b{color:var(--accent)}
+.go{border-radius:20px}
+.go.main{background:var(--accent);color:var(--on-accent)}
+.tot{border-top:2px dashed var(--line)}
+.tot .grand{color:var(--accent);font-size:32px}
+.line{border-top:1px dashed var(--line)}
+.step{border-radius:12px}
+/* Mosaicos de producto: color e ícono por categoría, espiral de marca de agua */
+.cat-helados{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M7 11h10l-5 12z'/%3E%3Ccircle cx='12' cy='7' r='5.2'/%3E%3C/svg%3E")}
+.cat-frio{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M6 7h12l-1.6 15H7.6z'/%3E%3Cpath d='M14 1.5l1.2.5-1.4 4.5h-1.6z'/%3E%3C/svg%3E")}
+.cat-paletas{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Crect x='6.5' y='1.5' width='11' height='15' rx='5.5'/%3E%3Crect x='10.8' y='15' width='2.4' height='7.5' rx='1.2'/%3E%3C/svg%3E")}
+.cat-palomitas{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M5 11h14l-2 12H7z'/%3E%3Ccircle cx='8' cy='8' r='3.2'/%3E%3Ccircle cx='12' cy='6' r='3.2'/%3E%3Ccircle cx='16' cy='8' r='3.2'/%3E%3C/svg%3E")}
+.cat-algodon{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Ccircle cx='8.5' cy='10' r='4.5'/%3E%3Ccircle cx='15.5' cy='10' r='4.5'/%3E%3Ccircle cx='12' cy='6.5' r='4.5'/%3E%3Crect x='11' y='13' width='2' height='10' rx='1'/%3E%3C/svg%3E")}
+.cat-extras{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232A1220'%3E%3Cpath d='M12 1.5l2.4 7.1 7.1 2.4-7.1 2.4L12 20.5l-2.4-7.1L2.5 11l7.1-2.4z'/%3E%3C/svg%3E")}
+.tile{min-height:124px;padding:56px 12px 12px;border-radius:20px;overflow:hidden;
+  background:color-mix(in srgb,var(--hue) 11%,var(--card));border-color:color-mix(in srgb,var(--hue) 32%,var(--line));justify-content:flex-end;gap:4px}
+.tile::before{content:"";position:absolute;left:12px;top:12px;width:36px;height:36px;border-radius:13px;background:var(--ico) center/22px 22px no-repeat,var(--hue);box-shadow:0 3px 8px color-mix(in srgb,var(--hue) 40%,transparent)}
+.tile::after{content:"";position:absolute;right:-16px;bottom:-16px;width:96px;height:96px;background:var(--hue);opacity:.2;pointer-events:none;
+  -webkit-mask:var(--swirl) center/contain no-repeat;mask:var(--swirl) center/contain no-repeat;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.tile:hover::after{transform:rotate(40deg) scale(1.08)}
+.tile .nm,.tile .pr,.tile .pill,.tile .qty{position:relative;z-index:1}
+.tile .qty{position:absolute}
+.tile .nm{font-weight:700;font-size:15px;padding-right:0}
+.tile .pr{font-weight:800;font-size:18px;color:color-mix(in srgb,var(--hue) 62%,var(--ink))}
+.tile:hover{background:color-mix(in srgb,var(--hue) 18%,var(--card));border-color:color-mix(in srgb,var(--hue) 60%,var(--line))}
+.tile .qty{background:var(--accent);color:var(--on-accent);box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 45%,transparent)}
+.sk i{border-radius:20px}
+/* Inicio de sesión */
+.gate{background:radial-gradient(1200px 600px at 85% -10%,color-mix(in srgb,var(--accent) 45%,transparent),transparent 60%),radial-gradient(900px 500px at -10% 110%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 60%),#2A1220}
+.gate .box{border-radius:26px;border:0;box-shadow:0 30px 80px rgba(0,0,0,.45);padding:30px 26px}
+.gate .box .btn{background:var(--accent);color:var(--on-accent);box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 40%,transparent);border:0}
+.gate .glogo{border:0;background:#fff;box-shadow:0 6px 18px rgba(42,18,32,.12);height:74px}
+.gate h1{font-size:28px;letter-spacing:-.02em}
 </style>
 </head>
 <body>
@@ -909,6 +994,11 @@ function addToCart(id){
   if (needExtras(p)) { S.sheet = false; openExtras(p, null); return; }
   pushLine(p, null);
 }
+function flavorHue(n){
+  const t = norm(n);
+  const m = [['fresa','#FF7A9C'],['chocolate','#B5754A'],['vainilla','#F6DC8A'],['coco','#E9D9B8'],['dulce de leche','#D99A55'],['oreo','#9A9AA8'],['limon','#D6E86B'],['mango','#FFB347'],['cafe','#A67C5B'],['menta','#7ED9B5'],['mora','#9B6BD6'],['uva','#9B6BD6'],['cereza','#E0436B'],['pistacho','#A8D08D'],['maracuya','#FFD23F'],['banana','#F7E07A'],['guayaba','#FF8E8E'],['chicle','#6FD3F7']].find(([k]) => t.includes(k));
+  return m ? m[1] : '#F0508C';
+}
 function flavorHTML(){
   const {p, sel} = S.fp, n = +p.scoops;
   const names = sel.map(id => (S.fmap[id] || {}).name || id);
@@ -916,7 +1006,7 @@ function flavorHTML(){
     <div class="grid fgrid">${activeFlavors().map(f => {
       const c = fStock(f), q = sel.filter(x => x === f.id).length;
       const note = c === null ? '' : c <= 0 ? '<span class="pill out">Agotado</span>' : c <= fLow(f) ? `<span class="pill low">Quedan ${fmtN(c)}</span>` : '';
-      return `<button class="tile cat-helados" data-fl="${esc(f.id)}">${q ? `<span class="qty">${q}</span>` : ''}<span class="nm">${esc(f.name)}</span>${note}</button>`; }).join('')}</div>
+      return `<button class="tile cat-helados" style="--hue:${flavorHue(f.name)}" data-fl="${esc(f.id)}">${q ? `<span class="qty">${q}</span>` : ''}<span class="nm">${esc(f.name)}</span>${note}</button>`; }).join('')}</div>
     <div class="dlg-act"><button class="btn" data-act="mclose">Cancelar</button><button class="btn" data-act="flundo"${sel.length ? '' : ' disabled'}>Quitar último</button><button class="btn pri" data-act="flok"${sel.length === n ? '' : ' disabled'}>Agregar al pedido</button></div>`;
 }
 function flavorTap(id){
