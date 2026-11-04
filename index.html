@@ -634,7 +634,7 @@ function paintStrip(){
   if (!S.db || !S.loaded.days || !S.loaded.sales || !S.loaded.cashouts || !S.loaded.cashins) { el.hidden = true; return; }
   const day = dayKey(), dd = S.days[day] || {}, st = dayStats(day);
   let state = 'wait', head, link;
-  if (dd.closed) { state = 'closed'; head = 'Caja cerrada' + (dd.closedBy ? ' por ' + esc(dd.closedBy) : ''); link = S.isAdmin ? '<a href="#cierre">Reabrir</a>' : ''; }
+  if (dd.closed) { state = 'closed'; head = 'Caja cerrada' + (dd.closedBy ? ' por ' + esc(dd.closedBy) : ''); link = '<a href="#cierre">Reabrir</a>'; }
   else if (isOpen(dd)) { state = 'open'; head = 'Caja abierta' + (dd.openedBy ? ' por ' + esc(dd.openedBy) : '') + (dd.openedAt ? ' · ' + hhmm(dd.openedAt) : ''); link = '<a href="#cierre">Cierre</a>'; }
   else { head = 'Caja sin abrir'; link = '<a href="#cierre">Abrir caja</a>'; }
   el.dataset.s = state;
@@ -676,7 +676,7 @@ function viewInicio(){
   const who = S.session || (codesOn() ? '' : S.cashier);
   const n = S.cart.reduce((a, l) => a + l.qty, 0), T = totals();
   let state = '';
-  if (dd.closed) state = `<div class="obox"><b>La caja de hoy está cerrada${dd.closedBy ? ' por ' + esc(dd.closedBy) : ''}.</b><span class="muted">${S.isAdmin ? 'Puedes reabrirla en Apertura y cierre.' : 'Un administrador puede reabrirla.'}</span><a class="btn" href="#cierre">Ir a Apertura y cierre</a></div>`;
+  if (dd.closed) state = `<div class="obox"><b>La caja de hoy está cerrada${dd.closedBy ? ' por ' + esc(dd.closedBy) : ''}.</b><span class="muted">Puede reabrirla quien esté autorizado, con su código, en Apertura y cierre.</span><a class="btn" href="#cierre">Ir a Apertura y cierre</a></div>`;
   else if (!isOpen(dd)) state = `<div class="obox"><b>La caja de hoy todavía no está abierta.</b><span class="muted">Cuenta el efectivo con el que empiezas y regístralo para poder cobrar.</span><a class="btn pri" href="#cierre">Abrir caja</a></div>`;
   const pend = n ? `<div class="obox"><b>Tienes un pedido sin cobrar:</b><span>${n} producto${n === 1 ? '' : 's'} · ${money(T.total)}</span><a class="btn pay" href="#caja">Continuar el pedido</a></div>` : '';
   const heldN = S.held.length ? `<div class="obox"><b>${S.held.length} pedido${S.held.length === 1 ? '' : 's'} en espera en este equipo.</b><a class="btn" href="#caja">Ir a la Caja</a></div>` : '';
@@ -733,7 +733,7 @@ function orderHTML(){
 function openBanner(){
   if (!S.loaded.days) return '';
   const day = dayKey(), dd = S.days[day] || {};
-  if (dd.closed) return `<div class="obox"><b>La caja de hoy está cerrada${dd.closedBy ? ' por ' + esc(dd.closedBy) : ''}.</b><span class="muted">${S.isAdmin ? 'Puedes reabrirla en <a href="#cierre">Apertura y cierre</a>.' : 'Un administrador puede reabrirla.'}</span></div>`;
+  if (dd.closed) return `<div class="obox"><b>La caja de hoy está cerrada${dd.closedBy ? ' por ' + esc(dd.closedBy) : ''}.</b><span class="muted">Puede reabrirla quien esté autorizado, con su código, en <a href="#cierre">Apertura y cierre</a>.</span></div>`;
   if (isOpen(dd)) return `<p class="muted sm" style="margin-bottom:10px">Caja abierta por <b>${esc(dd.openedBy || 'sin registrar')}</b>${dd.openedAt ? ' a las ' + hhmm(dd.openedAt) : ''}.</p>`;
   return `<div class="obox"><div><b>Abre la caja para empezar a cobrar</b><p class="muted sm">Cuenta el efectivo con el que empieza el día y regístralo.</p>${prevHint()}</div>
     <div class="rowf"><div class="fld"><label for="ofondo">Efectivo de apertura (RD$)</label><input id="ofondo" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${prefill()}"></div>${whoSelect('ofwho', '¿Quién abre la caja?')}<button class="btn pay" data-act="openday" data-day="${day}">Abrir caja</button></div></div>`;
@@ -1409,7 +1409,6 @@ function prevHint(){
 const prevPill = (dd, fondo) => dd.prevClose != null && Math.abs(fondo - dd.prevClose) > 0.001
   ? `<p style="margin-top:10px"><span class="pill low">Distinto al cierre anterior (${money(dd.prevClose)})</span></p>` : '';
 function reopenHTML(isToday, counted){
-  if (!S.isAdmin) return '';
   if (!isToday) return '<p class="muted sm" style="margin-top:10px">Los días anteriores ya no se reabren.</p>';
   if (!S.reopenAsk) return '<button class="btn" style="margin-top:12px" data-act="reopenask">Reabrir caja</button>';
   return `<div class="form" style="margin-top:12px"><div class="fld"><label for="rfondo">Efectivo con el que se vuelve a abrir (RD$)</label><input id="rfondo" type="number" inputmode="decimal" min="0" step="any" value="${counted}"><button type="button" class="btn sm" style="justify-self:start" data-act="cntopen" data-t="rfondo">Contar billetes y monedas</button></div>
@@ -1569,7 +1568,7 @@ function guardOpenToday(){
   const dd = S.days[dayKey()] || {};
   if (!S.loaded.days) { toast('Espera un momento: se están cargando los datos.'); return false; }
   if (!isOpen(dd)) { toast('Primero abre la caja del día.'); return false; }
-  if (dd.closed) { toast('La caja de hoy ya está cerrada. Un administrador puede reabrirla.'); return false; }
+  if (dd.closed) { toast('La caja de hoy ya está cerrada. Se reabre en Apertura y cierre, con el código de quien esté autorizado.'); return false; }
   return true;
 }
 function openCashout(){
