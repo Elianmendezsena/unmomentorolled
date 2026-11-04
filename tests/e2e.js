@@ -49,7 +49,7 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   // cerrar sesión (admin directo) y entrar con la cuenta de la caja
   await page.goto(base); await page.waitForTimeout(700);
   await page.evaluate(() => { location.hash = '#inicio'; }); await page.waitForTimeout(300);
-  await page.click('[data-act="acctout"]'); await page.waitForSelector('#g-mail', {timeout:5000});
+  await page.locator('#outbtn').click(); await page.waitForSelector('#g-mail', {timeout:5000});
   ok(true, 'cerrar sesión devuelve a la pantalla de entrada');
   await page.fill('#g-mail', 'caja@test.local'); await page.fill('#g-pass', 'caja123'); await page.click('#g-go'); await page.waitForSelector('#gate', {state:'hidden'}); await page.waitForTimeout(800);
   ok(!(await page.textContent('#nav')).includes('Ajustes'), 'la cuenta de caja NO ve Ajustes');
@@ -69,7 +69,7 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
 
   // la cuenta de caja no puede cerrar sesión sin el PIN del administrador
   await page.goto(base + '#inicio'); await page.waitForTimeout(600);
-  await page.click('[data-act="acctout"]'); await page.waitForSelector('#apin');
+  await page.locator('#outbtn').click(); await page.waitForSelector('#apin');
   await page.fill('#apin', '9999'); await page.click('[data-act="authgo"]'); await page.waitForTimeout(500);
   ok(await page.locator('#gate').isHidden(), 'con PIN incorrecto no se cierra la sesión');
   await page.fill('#apin', '1234'); await page.click('[data-act="authgo"]'); await page.waitForSelector('#g-mail', {timeout:5000});
