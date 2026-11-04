@@ -1,4 +1,4 @@
-/* Capa de datos de Caja Heladería.
+/* Capa de datos de Un Momento Rolled.
    La app habla con una interfaz sencilla (collection / doc / where / orderBy / limit / get / set / update / delete / onSnapshot).
    Aquí esa interfaz se traduce a Supabase: todo se guarda en la tabla "docs" (col, id, data) y los cambios llegan en tiempo real. */
 (function (root) {

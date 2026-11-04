@@ -1,4 +1,4 @@
-# Caja Heladería
+# Un Momento Rolled
 
 Caja registradora (POS) instalable como app web. Frontend estático en GitHub Pages + Supabase (base de datos, cuentas, tiempo real).
 

@@ -1,4 +1,4 @@
--- Caja Heladería · etapa 1: funciones (códigos en el servidor)
+-- Un Momento Rolled · etapa 1: funciones (códigos en el servidor)
 
 -- Mezcla campos en un documento sin pisar el resto (equivale a "update" de la app).
 create or replace function public.doc_merge(p_col text, p_id text, p_patch jsonb) returns void

@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Caja">
-<title>Caja Heladería</title>
+<title>Un Momento Rolled</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -2384,7 +2384,7 @@ function showGate(msg, opts){
     $('#g-out').onclick = async () => { try { await S.sb.auth.signOut(); } catch {} location.reload(); };
     return;
   }
-  g.innerHTML = `<form class="box" id="g-form" autocomplete="on"><img class="glogo" src="icons/logo.png" alt="" onerror="this.remove()"><h1>Caja Heladería</h1><p>Entra con la cuenta de este equipo.</p>
+  g.innerHTML = `<form class="box" id="g-form" autocomplete="on"><img class="glogo" src="icons/logo.png" alt="" onerror="this.remove()"><h1>Un Momento Rolled</h1><p>Entra con la cuenta de este equipo.</p>
     <div class="fld"><label for="g-mail">Correo</label><input class="in" id="g-mail" type="email" autocomplete="username" required></div>
     <div class="fld"><label for="g-pass">Contraseña</label><input class="in" id="g-pass" type="password" autocomplete="current-password" required></div>
     <div class="msg" id="g-msg" role="alert">${esc(msg || '')}</div>

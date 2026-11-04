@@ -1,4 +1,4 @@
--- Caja Heladería · etapa 1: tablas y permisos (RLS)
+-- Un Momento Rolled · etapa 1: tablas y permisos (RLS)
 -- Una sola tabla "docs" guarda todas las colecciones de la app (products, sales, days…).
 -- Los códigos (PIN del administrador y códigos de cajera) viven en tablas aparte que nadie puede leer directamente.
 
