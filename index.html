@@ -360,8 +360,46 @@ a.btn{display:inline-flex;align-items:center;justify-content:center;text-decorat
 .gate h1{font:800 26px var(--f-display);margin:0 0 4px}
 .gate p{margin:0 0 16px;color:var(--muted)}
 .gate .fld{margin-bottom:12px}
+.gate .glogo{display:block;margin:0 auto 16px;height:68px;max-width:220px;object-fit:contain;background:#fff;border-radius:12px;padding:6px 10px;border:1px solid var(--line)}
+.gate h1,.gate>.box>p{text-align:center}
 .gate .msg{min-height:20px;margin:6px 0 10px;color:#B3261E;font-size:14px}
 .gate .btn{width:100%}
+/* Fluidez: sin retardo al tocar, desplazamiento suave y movimiento sutil (se apaga si el equipo pide menos animación). */
+html{-webkit-tap-highlight-color:transparent}
+button,a,select,input,.tile,.go{touch-action:manipulation}
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+  .btn,.tile,.go,.card,.nav a,.in,input,select,.pill{transition:background-color .15s,border-color .15s,box-shadow .2s,transform .15s,opacity .15s,color .15s}
+  .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.14)}
+  .btn:active:not(:disabled){transform:scale(.97);box-shadow:none}
+  .tile:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.16)}
+  .tile:active{transform:scale(.97)}
+  .go:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+  .go:active{transform:scale(.98)}
+  .tbl tbody tr{transition:background-color .15s}
+  .tbl tbody tr:hover{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+  input:focus,select:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+  #view.fadein :is(.go,.stat,.card,.tile,.obox,.vh){animation:rise .4s cubic-bezier(.2,.8,.2,1) both}
+  #view.fadein :is(.go,.stat,.card,.tile):nth-child(2){animation-delay:.04s}
+  #view.fadein :is(.go,.stat,.card,.tile):nth-child(3){animation-delay:.08s}
+  #view.fadein :is(.go,.stat,.card,.tile):nth-child(4){animation-delay:.12s}
+  #view.fadein :is(.go,.stat,.card,.tile):nth-child(5){animation-delay:.16s}
+  #view.fadein :is(.go,.stat,.card,.tile):nth-child(6){animation-delay:.2s}
+  #view.fadein :is(.go,.stat,.card,.tile):nth-child(n+7){animation-delay:.24s}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .st[data-s="on"]::before{animation:pulse 2.6s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(90,210,130,.55)}70%,100%{box-shadow:0 0 0 7px rgba(90,210,130,0)}}
+  .cstrip:not([hidden]){animation:vfade .3s ease-out}
+  .gate .box{animation:gatein .55s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes gatein{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+  .gate .glogo{animation:logoin .65s .12s cubic-bezier(.3,1.5,.5,1) both}
+  @keyframes logoin{from{opacity:0;transform:scale(.6) rotate(-4deg)}to{opacity:1;transform:none}}
+  .gate .fld,.gate .msg,.gate .btn{animation:rise .45s both}
+  .gate .fld:nth-of-type(1){animation-delay:.2s}.gate .fld:nth-of-type(2){animation-delay:.28s}.gate .btn{animation-delay:.36s}
+  .gate.leave{animation:gateout .3s ease-in forwards;pointer-events:none}
+  @keyframes gateout{to{opacity:0;transform:scale(1.02)}}
+  .hdr,#view{animation:vfade .35s ease-out}
+}
 </style>
 </head>
 <body>
@@ -1421,13 +1459,17 @@ function turnosHTML(dd){
   const tm = t => t ? hhmm(t) : '';
   const list = (dd.sessions || []).map(s => ({by:s.openedBy, at:s.openedAt, fondo:s.fondo, cby:s.closedBy, cat:s.closedAt, counted:s.counted, diff:s.diff, done:true}));
   list.push({by:dd.openedBy, at:dd.openedAt, fondo:dd.fondo, cby:dd.closed ? dd.closedBy : '', cat:dd.closed ? dd.closedAt : null, counted:dd.closed ? dd.counted : null, diff:dd.closed ? dd.diff : null, done:!!dd.closed});
+  const stT = dayStats(dd.day || S.day);
+  const sold = t => { const l = stT.okAll.filter(x => x.ts >= (+t.at || 0) && (!t.done || !t.cat || x.ts <= t.cat)); return {n:l.length, t:r2(l.reduce((a, x) => a + (+x.total || 0), 0))}; };
   const rows = list.map((t, i) => {
     const [cls, txt] = t.done ? diffTxt(+t.diff || 0) : ['', ''];
+    const v = sold(t);
     return `<tr><td>${i + 1}</td><td><b>${who(t.by)}</b><div class="muted sm">${tm(t.at) || 'hora no registrada'}</div></td><td class="num">${money(t.fondo)}</td>
       <td>${t.done ? `<b>${who(t.cby)}</b><div class="muted sm">${tm(t.cat)}</div>` : '<span class="pill ok">Abierta</span>'}</td>
+      <td class="num"><b>${money(v.t)}</b><div class="muted sm">${v.n} ticket${v.n === 1 ? '' : 's'}${t.done ? '' : ' hasta ahora'}</div></td>
       <td class="num">${t.done ? money(t.counted) : ''}</td><td>${t.done ? `<span class="pill ${cls}">${txt}</span>` : ''}</td></tr>`;
   }).join('');
-  return `<div class="card" style="margin-top:16px"><h3>Quién abrió y cerró la caja</h3><div class="scroll"><table class="tbl"><thead><tr><th>#</th><th>Abrió</th><th class="num">Apertura</th><th>Cerró</th><th class="num">Total contado</th><th>Resultado</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="card" style="margin-top:16px"><h3>Quién abrió y cerró la caja</h3><div class="scroll"><table class="tbl"><thead><tr><th>#</th><th>Abrió</th><th class="num">Apertura</th><th>Cerró</th><th class="num">Vendido</th><th class="num">Total contado</th><th>Resultado</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 const REASONS = ['Compra de productos', 'Compra de insumos (conos, vasos, toppings)', 'Pago a proveedor', 'Otro'];
 /* Saldo que debía quedar en caja después de cada retiro: apertura + ventas en efectivo − retiros, en orden de hora. */
@@ -1834,8 +1876,7 @@ const A = {
   login(){ openLogin(); },
   acctout(){
     const go = async () => { try { await S.sb.auth.signOut(); } catch {} location.reload(); };
-    if (S.isAdmin) { go(); return; }
-    askPin('Cerrar la sesión de este equipo', go, 'Solo quien administra puede cerrar la sesión de la caja. Escribe el código del administrador.');
+    go();
   },
   logout(){ S.session = ''; S.cashier = ''; clearTimeout(idleT); paint(); toast('Sesión cerrada.'); },
   async loginok(){
@@ -2209,7 +2250,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Backspace') { kpPress('back'); e.preventDefault(); }
   else if (e.key === 'Enter') { kpPress('ok'); e.preventDefault(); }
 });
-$('#view').addEventListener('animationend', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('fadein'); });
+$('#view').addEventListener('animationend', e => { if (e.target === e.currentTarget) { const v = e.currentTarget; setTimeout(() => v.classList.remove('fadein'), 700); } });
 window.addEventListener('hashchange', () => { S.sheet = false; S.reopenAsk = false; if (readTab() !== 'ajustes') S.unlocked = false; paint(false); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
@@ -2253,7 +2294,7 @@ function showGate(msg, opts){
     $('#g-out').onclick = async () => { try { await S.sb.auth.signOut(); } catch {} location.reload(); };
     return;
   }
-  g.innerHTML = `<form class="box" id="g-form" autocomplete="on"><h1>Caja Heladería</h1><p>Entra con la cuenta de este equipo.</p>
+  g.innerHTML = `<form class="box" id="g-form" autocomplete="on"><img class="glogo" src="icons/logo.png" alt="" onerror="this.remove()"><h1>Caja Heladería</h1><p>Entra con la cuenta de este equipo.</p>
     <div class="fld"><label for="g-mail">Correo</label><input class="in" id="g-mail" type="email" autocomplete="username" required></div>
     <div class="fld"><label for="g-pass">Contraseña</label><input class="in" id="g-pass" type="password" autocomplete="current-password" required></div>
     <div class="msg" id="g-msg" role="alert">${esc(msg || '')}</div>
@@ -2274,8 +2315,8 @@ async function enter(){
   try { w = await S.db.rpc('whoami'); } catch (e) { showGate('No se pudo conectar. Revisa el internet y recarga la página.', {noaccess:true}); return; }
   if (!w) { showGate('Esta cuenta no tiene acceso a la caja. Pide a quien administra que la habilite.', {noaccess:true}); return; }
   S.acct = w; S.isAdmin = w.role === 'admin';
-  $('#gate').hidden = true; $('#gate').innerHTML = '';
-  S.booting = false; listen(); paint();
+  const g = $('#gate'); S.booting = false; listen(); paint();
+  if (MOTION()) { g.classList.add('leave'); setTimeout(() => { g.hidden = true; g.classList.remove('leave'); g.innerHTML = ''; }, 300); } else { g.hidden = true; g.innerHTML = ''; }
 }
 async function boot(){
   paint();

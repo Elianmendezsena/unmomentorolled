@@ -70,13 +70,13 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   ok((await page.locator('#printframe').getAttribute('srcdoc')).includes('Palomitas'), 'el marco contiene el ticket');
   await page.click('[data-act="mclose"]').catch(() => {}); await page.waitForTimeout(300);
 
-  // la cuenta de caja no puede cerrar sesión sin el PIN del administrador
-  await page.goto(base + '#inicio'); await page.waitForTimeout(600);
-  await page.locator('#outbtn').click(); await page.waitForSelector('#apin');
-  await page.fill('#apin', '9999'); await page.click('[data-act="authgo"]'); await page.waitForTimeout(500);
-  ok(await page.locator('#gate').isHidden(), 'con PIN incorrecto no se cierra la sesión');
-  await page.fill('#apin', '1234'); await page.click('[data-act="authgo"]'); await page.waitForSelector('#g-mail', {timeout:5000});
-  ok(true, 'con el PIN correcto se cierra la sesión');
+  // la cuenta de caja cierra sesión directamente (sin pedir PIN)
+  await page.goto(base + '#cierre'); await page.waitForTimeout(700);
+  const vend = (await page.textContent('#view')).replace(/\s+/g, ' ');
+  ok(/Vendido/.test(vend) && /RD\$\s?60\.00/.test(vend) && /1 ticket/.test(vend), 'el cuadre muestra cuánto se vendió (RD$ 60.00, 1 ticket)');
+  await page.locator('#outbtn').click(); await page.waitForSelector('#g-mail', {timeout:5000});
+  ok(await page.locator('#apin').count() === 0, 'la cuenta de caja cierra sesión sin pedir el PIN');
+  ok(await page.locator('.gate .glogo').count() === 1 && await page.locator('.gate .glogo').evaluate(i => i.complete && i.naturalWidth > 0), 'el logo aparece en la pantalla de entrada');
   ok(errs.length === 0, 'sin errores de JavaScript' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await b.close(); srv.close();
 })().catch(e => { console.error('FALLO', e); process.exit(1); });
