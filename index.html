@@ -1932,10 +1932,13 @@ const A = {
   async tdlh(){
     if (!S.sel || !S.dl) return;
     const s = S.sel.s, lg = ticketLogo();
-    const html = '<!doctype html><html lang="es"><meta charset="utf-8"><title>Ticket ' + esc(s.code || '') + '</title><style>body{margin:0;background:#fff;color:#000}.t{width:72mm;margin:0 auto;padding:2mm 0;font:10px/1.3 "Courier New",monospace;text-align:center}.t img{display:block;margin:0 auto 6px;max-height:22mm;max-width:55mm}.t pre{display:block;width:max-content;margin:0 auto;white-space:pre;text-align:left;font:inherit}@media print{@page{margin:0}}</style><div class="t">' + (lg ? '<img src="' + lg + '" alt="">' : '') + '<pre>' + esc(ticketText(s)) + '</pre></div><script>addEventListener("load",function(){setTimeout(function(){print()},300)})<\/script></html>';
-    const w = window.open('', '_blank');
-    if (w) { w.document.open(); w.document.write(html); w.document.close(); }
-    else { toast('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio.'); }
+    const html = '<!doctype html><html lang="es"><meta charset="utf-8"><title>Ticket ' + esc(s.code || '') + '</title><style>body{margin:0;background:#fff;color:#000}.t{width:72mm;margin:0 auto;padding:2mm 0;font:10px/1.3 "Courier New",monospace;text-align:center}.t img{display:block;margin:0 auto 6px;max-height:22mm;max-width:55mm}.t pre{display:block;width:max-content;margin:0 auto;white-space:pre;text-align:left;font:inherit}@media print{@page{margin:0}}</style><div class="t">' + (lg ? '<img src="' + lg + '" alt="">' : '') + '<pre>' + esc(ticketText(s)) + '</pre></div></html>';
+    /* Se imprime en la misma pestaña: un marco invisible con el ticket, sin abrir ventanas nuevas. */
+    const old = document.getElementById('printframe'); if (old) old.remove();
+    const fr = document.createElement('iframe'); fr.id = 'printframe'; fr.setAttribute('aria-hidden', 'true');
+    fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    fr.onload = () => { setTimeout(() => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch { toast('No se pudo abrir la impresión.'); } setTimeout(() => fr.remove(), 60000); }, 300); };
+    fr.srcdoc = html; document.body.appendChild(fr);
   },
   async logodel(){ if (await saveShop({logo:''})) { toast('Logo quitado.'); paint(); } },
   rfresh(){ S.rev++; paint(false); },

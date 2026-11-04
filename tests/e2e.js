@@ -65,6 +65,9 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.click('[data-pm="cash"]'); await page.fill('#recv', '100'); await page.click('#confirm'); await page.waitForTimeout(900);
   const sales = await page.evaluate(() => window.__f.all('sales'));
   ok(sales.length === 1 && sales[0].total === 60 && sales[0].cashier === 'Ana' && sales[0].change === 40, 'la venta llegó al servidor a nombre de Ana: ' + JSON.stringify(sales.map(s => [s.total, s.cashier, s.change])));
+  await page.click('[data-act="tdlh"]'); await page.waitForTimeout(800);
+  ok(ctx.pages().length === 1 && await page.locator('#printframe').count() === 1, 'imprimir usa la misma pestaña (marco oculto, sin ventana nueva)');
+  ok((await page.locator('#printframe').getAttribute('srcdoc')).includes('Palomitas'), 'el marco contiene el ticket');
   await page.click('[data-act="mclose"]').catch(() => {}); await page.waitForTimeout(300);
 
   // la cuenta de caja no puede cerrar sesión sin el PIN del administrador
