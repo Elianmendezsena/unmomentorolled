@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14213D">
+<script>try{var t=JSON.parse(localStorage.getItem("caja.theme"));if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Caja">
@@ -56,6 +57,10 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+.foot{padding-top:4px;padding-bottom:90px;text-align:center;font-size:13px}
+.foot .lnk,.gate .lnk{color:var(--muted)}
+.pol h3{margin:16px 0 4px;font-size:16px}.pol p{margin:0;color:var(--muted);line-height:1.5}
+.gate .gl{display:flex;gap:16px;justify-content:center;margin-top:14px;font-size:13px}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-text-size-adjust:100%}
@@ -65,7 +70,7 @@ h2{font-size:20px;line-height:1.2;font-weight:800}
 p{margin:0}
 button{font:inherit;color:inherit}
 a{color:var(--accent)}
-.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1400px;margin-left:auto;margin-right:auto}
+.wrap{padding-left:max(clamp(12px,1.4vw,24px),env(safe-area-inset-left,0px));padding-right:max(clamp(12px,1.4vw,24px),env(safe-area-inset-right,0px));max-width:none;margin-left:auto;margin-right:auto}
 .muted{color:var(--muted)} .sm{font-size:13px} .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 :focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 75%,transparent);outline-offset:2px}
 
@@ -499,6 +504,7 @@ h2{letter-spacing:-.015em}
     <div class="tools">
       <span class="st" id="status" data-s="wait">Conectando…</span>
       <button class="btn sm" id="whobtn" style="display:none"></button>
+      <button class="btn sm" id="themebtn" data-act="theme" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro"></button>
       <button class="btn sm" id="outbtn" data-act="acctout" title="Cerrar la sesión de este equipo">Cerrar sesión</button>
       <label class="cash"><span>Cobra</span><select id="cashier" aria-label="Quién cobra"></select></label>
     </div>
@@ -507,6 +513,7 @@ h2{letter-spacing:-.015em}
 </header>
 <div id="banner"></div>
 <main class="wrap page" id="view"></main>
+<footer class="wrap foot"><button class="lnk" data-act="policy">Políticas de uso</button></footer>
 <div class="bar" id="bar" hidden></div>
 <div id="modal" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -723,7 +730,12 @@ const loading = (msg, kind) => `<div class="sk" role="status" aria-label="${esc(
   ? '<i style="height:44px;width:60%"></i><div class="skg">' + '<i></i>'.repeat(8) + '</div>'
   : '<i style="height:34px;width:40%"></i>' + '<i></i>'.repeat(5)) + '</div>';
 
+function paintTheme(){
+  const dark = (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
+  const b = document.getElementById('themebtn'); if (b) b.textContent = dark ? '☀ Claro' : '☾ Oscuro';
+}
 function paintHeader(){
+  paintTheme();
   $('#brand').textContent = S.shop.name || 'Heladería';
   const nAl = alertsReady() ? alerts().length : 0;
   $('#nav').innerHTML = TABS.filter(([id]) => !ADMIN_TABS.includes(id) || S.isAdmin)
@@ -1004,6 +1016,8 @@ function addToCart(id){
   if (needExtras(p)) { S.sheet = false; openExtras(p, null); return; }
   pushLine(p, null);
 }
+const serveU = p => (p && p.serve === 'rollos') ? 'rollos' : 'bolas';
+const serveOne = p => (p && p.serve === 'rollos') ? 'rollo' : 'bola';
 function flavorHue(n){
   const t = norm(n);
   const m = [['fresa','#FF7A9C'],['chocolate','#B5754A'],['vainilla','#F6DC8A'],['coco','#E9D9B8'],['dulce de leche','#D99A55'],['oreo','#9A9AA8'],['limon','#D6E86B'],['mango','#FFB347'],['cafe','#A67C5B'],['menta','#7ED9B5'],['mora','#9B6BD6'],['uva','#9B6BD6'],['cereza','#E0436B'],['pistacho','#A8D08D'],['maracuya','#FFD23F'],['banana','#F7E07A'],['guayaba','#FF8E8E'],['chicle','#6FD3F7']].find(([k]) => t.includes(k));
@@ -1012,7 +1026,7 @@ function flavorHue(n){
 function flavorHTML(){
   const {p, sel} = S.fp, n = +p.scoops;
   const names = sel.map(id => (S.fmap[id] || {}).name || id);
-  return `<h2 id="mt">${esc(p.name)}</h2><p class="muted">Elige ${n > 1 ? n + ' sabores (puedes repetir)' : 'el sabor'}. <b>${sel.length}/${n}</b>${names.length ? ' · ' + esc(names.join(' + ')) : ''}</p>
+  return `<h2 id="mt">${esc(p.name)}</h2><p class="muted">Elige ${n > 1 ? n + ' sabores de ' + serveU(p) + ' (puedes repetir)' : 'el sabor del ' + serveOne(p)}. <b>${sel.length}/${n}</b>${names.length ? ' · ' + esc(names.join(' + ')) : ''}</p>
     <div class="grid fgrid">${activeFlavors().map(f => {
       const c = fStock(f), q = sel.filter(x => x === f.id).length;
       const note = c === null ? '' : c <= 0 ? '<span class="pill out">Agotado</span>' : c <= fLow(f) ? `<span class="pill low">Quedan ${fmtN(c)}</span>` : '';
@@ -1889,7 +1903,7 @@ function productosHTML(){
     <td style="min-width:190px"><input type="text" data-pf="name" data-id="${esc(p.id)}" value="${esc(p.name)}" maxlength="60" aria-label="Nombre"></td>
     <td style="min-width:150px"><select data-pf="cat" data-id="${esc(p.id)}" aria-label="Categoría">${catOptions(p.cat)}</select></td>
     <td style="min-width:96px"><input type="number" inputmode="decimal" min="0" step="any" data-pf="price" data-id="${esc(p.id)}" value="${esc(p.price)}" aria-label="Precio"></td>
-    <td style="min-width:70px"><input type="number" inputmode="numeric" min="0" step="1" data-pf="scoops" data-id="${esc(p.id)}" value="${esc(p.scoops || 0)}" aria-label="Bolas o sabores a elegir"></td>
+    <td style="min-width:150px"><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" min="0" step="1" style="width:64px" data-pf="scoops" data-id="${esc(p.id)}" value="${esc(p.scoops || 0)}" aria-label="Cuántos sabores se eligen"><select data-pf="serve" data-id="${esc(p.id)}" aria-label="Se sirve en bolas o en rollos"><option value="bolas"${serveU(p) === 'bolas' ? ' selected' : ''}>Bolas</option><option value="rollos"${serveU(p) === 'rollos' ? ' selected' : ''}>Rollos</option></select></div></td>
     <td class="c"><input type="checkbox" data-pf="ext" data-id="${esc(p.id)}"${askExt(p) ? ' checked' : ''} aria-label="Preguntar por extras al cobrar"></td>
     <td class="c"><input type="checkbox" data-pf="track" data-id="${esc(p.id)}"${p.track ? ' checked' : ''} aria-label="Controlar inventario"></td>
     <td style="min-width:80px"><input type="number" inputmode="decimal" min="0" step="any" data-pf="low" data-id="${esc(p.id)}" value="${esc(p.low || 0)}"${p.track ? '' : ' disabled'} aria-label="Avisar cuando queden"></td>
@@ -1906,11 +1920,12 @@ function productosHTML(){
       <div class="fld" style="flex:2 1 220px"><label for="np-name">Nombre</label><input id="np-name" maxlength="60" autocomplete="off"></div>
       <div class="fld"><label for="np-cat">Categoría</label><select id="np-cat">${catOptions('helados')}</select></div>
       <div class="fld" style="flex:0 1 130px"><label for="np-price">Precio (RD$)</label><input id="np-price" type="number" inputmode="decimal" min="0" step="any"></div>
-      <div class="fld" style="flex:0 1 110px"><label for="np-scoops">Bolas a elegir</label><input id="np-scoops" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></div>
+      <div class="fld" style="flex:0 1 110px"><label for="np-scoops">Sabores a elegir</label><input id="np-scoops" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></div>
+      <div class="fld" style="flex:0 1 120px"><label for="np-serve">Se sirve en</label><select id="np-serve"><option value="bolas">Bolas</option><option value="rollos">Rollos</option></select></div>
       <label style="display:flex;gap:8px;align-items:center;min-height:46px;font-weight:600"><input id="np-track" type="checkbox" style="width:22px;height:22px"> Controlar inventario</label>
       <button class="btn pri" data-act="addp">Agregar</button></div></section>
-    <section class="sec"><h2>Catálogo</h2><p class="muted">Los cambios se guardan al salir de cada casilla. “Visible” quita el producto de la Caja sin borrar su historial. En <b>Bolas</b> pon cuántos sabores se eligen al vender (por ejemplo 2 en “Helado 2 bolas”); con 0 no pregunta sabor.</p>
-      <div class="scroll"><table class="tbl ed"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Bolas</th><th class="num">Pide extras</th><th class="num">Inventario</th><th>Avisar con</th><th class="num">Visible</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>
+    <section class="sec"><h2>Catálogo</h2><p class="muted">Los cambios se guardan al salir de cada casilla. “Visible” quita el producto de la Caja sin borrar su historial. En <b>Sabores y presentación</b> pon cuántos sabores se eligen al vender (por ejemplo 2 en “Helado 2 bolas”) y si ese producto se sirve en <b>bolas</b> o en <b>rollos</b>; con 0 no pregunta sabor.</p>
+      <div class="scroll"><table class="tbl ed"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Sabores y presentación</th><th class="num">Pide extras</th><th class="num">Inventario</th><th>Avisar con</th><th class="num">Visible</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>
     <section class="sec"><h2>Sabores de helado</h2><p class="muted">Cada bola vendida descuenta del sabor elegido. Una cubeta trae cierta cantidad de bolas; con eso el sistema te dice cuándo se acaba un sabor.</p>
       <div class="rowf"><div class="fld" style="flex:2 1 200px"><label for="nf-name">Nuevo sabor</label><input id="nf-name" maxlength="30" autocomplete="off"></div>
         <div class="fld" style="flex:0 1 130px"><label for="nf-tub">Bolas por cubeta</label><input id="nf-tub" type="number" inputmode="numeric" min="1" step="1" value="40"></div>
@@ -2027,7 +2042,7 @@ async function addProduct(){
   if (!name) { toast('Escribe el nombre del producto.'); return; }
   if (!(price >= 0)) { toast('Escribe el precio.'); return; }
   const order = Math.max(0, ...S.products.map(p => p.order || 0)) + 10;
-  const ok = await write(() => S.db.collection('products').doc().set({name, cat, price, track, low:track ? 5 : 0, active:true, order, unit:'ud', scoops}));
+  const ok = await write(() => S.db.collection('products').doc().set({name, cat, price, track, low:track ? 5 : 0, active:true, order, unit:'ud', scoops, serve:$('#np-serve').value === 'rollos' ? 'rollos' : 'bolas'}));
   if (ok) { toast(track ? 'Agregado. Cuéntalo en Inventario para empezar a controlarlo.' : 'Producto agregado.'); paint(); }
 }
 
@@ -2064,6 +2079,24 @@ const A = {
     go();
   },
   dropfailed(){ S.db.dropFailed(); },
+  theme(){
+    const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const nx = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = nx; store.set('theme', nx); paintTheme();
+  },
+  policy(){
+    openModal(`<h2 id="mt">Políticas de uso</h2><div class="pol">
+      <h3>1. Para qué se usa</h3><p>Este sistema es solo para operar Un Momento Rolled: cobrar, controlar el inventario y cuadrar la caja. No se usa para otros fines.</p>
+      <h3>2. Cuentas y códigos</h3><p>La cuenta de cada equipo pertenece a la tienda. Tu código personal es solo tuyo: no lo compartas ni cobres con el de otra persona. Cada cobro, apertura y cierre queda a nombre de quien escribió su código.</p>
+      <h3>3. Dinero y cuadre</h3><p>La caja se abre y se cierra con el efectivo realmente contado. Todo retiro o ingreso de efectivo se registra con su motivo.</p>
+      <h3>4. Descuentos y anulaciones</h3><p>Solo se hacen con la autorización del administrador. Quedan registrados con quién los pidió y no se pueden ocultar.</p>
+      <h3>5. Registros</h3><p>Las ventas, anulaciones y movimientos de caja no se borran ni se editan para esconder diferencias. Cualquier corrección se hace dejando constancia.</p>
+      <h3>6. Privacidad de los datos</h3><p>Los datos del negocio se guardan en un servicio seguro y solo los ve el personal autorizado. No los copies, fotografíes ni compartas fuera de la tienda sin permiso.</p>
+      <h3>7. Sin internet</h3><p>Si falla el internet puedes seguir cobrando: lo que guardes queda en el equipo y se envía solo al volver la conexión. Hasta que el aviso de pendientes desaparezca, no borres los datos del navegador.</p>
+      <h3>8. Cuidado del equipo</h3><p>Cierra la sesión cuando termines si el equipo lo usan otras personas. La sesión de cobro se cierra sola tras un rato sin usarse.</p>
+      <h3>9. Incumplimiento</h3><p>Usar el sistema de forma indebida puede llevar a que se suspenda el acceso de esa persona.</p></div>
+      <div class="dlg-act"><button class="btn pri" data-act="mclose">Entendido</button></div>`);
+  },
   logout(){ S.session = ''; S.cashier = ''; clearTimeout(idleT); paint(); toast('Sesión cerrada.'); },
   async loginok(){
     if (S.lockUntil > Date.now()) { toast('Espera unos segundos antes de intentar otra vez.'); return; }
@@ -2492,7 +2525,8 @@ function showGate(msg, opts){
     <div class="fld"><label for="g-mail">Correo</label><input class="in" id="g-mail" type="email" autocomplete="username" required></div>
     <div class="fld"><label for="g-pass">Contraseña</label><input class="in" id="g-pass" type="password" autocomplete="current-password" required></div>
     <div class="msg" id="g-msg" role="alert">${esc(msg || '')}</div>
-    <button class="btn pri" id="g-go" type="submit">Entrar</button></form>`;
+    <button class="btn pri" id="g-go" type="submit">Entrar</button>
+    <div class="gl"><button type="button" class="lnk" data-act="policy">Políticas de uso</button><button type="button" class="lnk" data-act="theme">Modo claro / oscuro</button></div></form>`;
   $('#g-form').onsubmit = async ev => {
     ev.preventDefault();
     const b = $('#g-go'), m = $('#g-msg'); b.disabled = true; m.textContent = '';

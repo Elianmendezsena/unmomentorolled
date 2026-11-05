@@ -51,6 +51,17 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   ok(/^respaldo-un-momento-rolled-\d{4}-\d\d-\d\d\.json$/.test(dlf.suggestedFilename()) && bk.docs.some(d => d.col === 'products') && bk.docs.some(d => d.col === 'settings'), 'el respaldo se descarga con todos los datos (' + bk.count + ' registros)');
   await page.waitForTimeout(500);
   ok(await page.evaluate(() => !!window.__f.get('settings', 'shop').lastBackup), 'queda anotada la fecha del último respaldo');
+  // modo oscuro, políticas de uso, rollos
+  const th0 = await page.evaluate(() => document.documentElement.dataset.theme || 'auto');
+  await page.click('#themebtn'); const th1 = await page.evaluate(() => document.documentElement.dataset.theme);
+  ok((th1 === 'dark' || th1 === 'light') && th1 !== th0 && await page.evaluate(() => JSON.parse(localStorage.getItem('caja.theme')) === document.documentElement.dataset.theme), 'el botón cambia entre claro y oscuro y lo recuerda (' + th0 + ' → ' + th1 + ')');
+  await page.click('[data-act="policy"]'); await page.waitForSelector('.pol');
+  ok((await page.textContent('.pol')).includes('Descuentos y anulaciones'), 'se abren las políticas de uso'); await page.click('[data-act="mclose"]'); await page.waitForTimeout(300);
+  await page.goto(base + '#productos'); await page.waitForTimeout(600);
+  await page.selectOption('[data-pf="serve"][data-id="cono"]', 'rollos'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => window.__f.get('products', 'cono').serve) === 'rollos', 'un producto se puede pasar de bolas a rollos');
+  ok(await page.evaluate(() => document.querySelector('.wrap.page').getBoundingClientRect().width) > 1100, 'la página usa casi todo el ancho');
+
   await page.evaluate(() => window.__persist());
 
   // cerrar sesión (admin directo) y entrar con la cuenta de la caja
