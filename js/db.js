@@ -50,7 +50,22 @@
       return out;
     }
 
-    /* Consulta en vivo: carga inicial + cambios en tiempo real; vuelve a cargar al reconectar. */
+    /* Un solo canal de tiempo real para toda la tabla: el servidor comprueba permisos una vez por cambio
+       (antes eran 12 canales y cada cambio se comprobaba 12 veces) y aquí se reparte según la colección. */
+    let shared = null, everSub = false;
+    function ensureChannel(){
+      if (shared) return;
+      shared = sb.channel('docs-' + newId())
+        .on('postgres_changes', {event:'*', schema:'public', table:T}, p => {
+          const col = (p.new && p.new.col) || (p.old && p.old.col);
+          lives.forEach(h => { if (h.col === col) h.push(p); });
+        });
+      shared.subscribe(status => {
+        if (status === 'SUBSCRIBED') { if (everSub) lives.forEach(h => h.reload()); everSub = true; }   // al reconectar se vuelve a leer lo que pudo perderse
+      });
+    }
+
+    /* Consulta en vivo: se lee de inmediato (sin esperar al tiempo real) y luego llegan los cambios. */
     function live(col, where, order, limit, onList, onErr, onlyId){
       const rows = new Map(); let ready = false, queue = [], dead = false, emitT = 0;
       const list = () => {
@@ -71,12 +86,11 @@
           ready = true; queue.forEach(apply); queue = []; if (!dead) onList(list());
         } catch (e) { if (onErr) onErr(toErr(e)); }
       };
-      const ch = sb.channel('l-' + col + '-' + newId())
-        .on('postgres_changes', {event:'*', schema:'public', table:T, filter:'col=eq.' + col}, p => { if (!ready) { queue.push(p); return; } apply(p); emit(); });
-      ch.subscribe(status => { if (status === 'SUBSCRIBED') load(); });
-      const fallback = setTimeout(() => { if (!ready) load(); }, 4000);   // si el tiempo real no conecta, se carga igual
-      const handle = {reload:load, stop(){ dead = true; clearTimeout(fallback); clearTimeout(emitT); lives.delete(handle); try { sb.removeChannel(ch); } catch {} }};
+      const handle = {col, reload:load, push(p){ if (!ready) { queue.push(p); return; } apply(p); emit(); },
+        stop(){ dead = true; clearTimeout(emitT); lives.delete(handle); if (!lives.size && shared) { try { sb.removeChannel(shared); } catch {} shared = null; everSub = false; } }};
       lives.add(handle);
+      ensureChannel();
+      load();
       return () => handle.stop();
     }
 

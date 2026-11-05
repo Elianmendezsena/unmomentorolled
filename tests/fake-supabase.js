@@ -11,7 +11,7 @@
     const who = () => (state.session ? {role:users[state.session.email].role, name:users[state.session.email].name} : null);
     const gen = d => ({ts:typeof d.ts === 'number' ? Math.floor(d.ts) : null, day:d.day ?? null});
     const clone = x => JSON.parse(JSON.stringify(x));
-    const emit = (eventType, n, o) => { const r = n || o; listeners.forEach(l => { if (l.col === r.col) setTimeout(() => l.cb({eventType, new:n ? clone(n) : null, old:o ? {col:o.col, id:o.id} : null}), 0); }); };
+    const emit = (eventType, n, o) => { const r = n || o; listeners.forEach(l => { if (!l.col || l.col === r.col) setTimeout(() => l.cb({eventType, new:n ? clone(n) : null, old:o ? {col:o.col, id:o.id} : null}), 0); }); };
     const rls = e => ({code:'42501', message:'new row violates row-level security policy for table "docs" (' + e + ')'});
     const colVal = (r, c) => c === 'col' ? r.col : c === 'id' ? r.id : c === 'ts' ? r.ts : c === 'day' ? r.day : (c.startsWith('data->>') ? String(r.data[c.slice(7)]) : undefined);
     const OPS = {gte:(a, b) => a >= b, gt:(a, b) => a > b, lte:(a, b) => a <= b, lt:(a, b) => a < b, eq:(a, b) => a == b, neq:(a, b) => a != b};

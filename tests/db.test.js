@@ -49,6 +49,10 @@ let n = 0; const ok = m => console.log('OK   ' + m);
   await assert.rejects(db.rpc('set_cashier_code', {p_name:'LUIS', p_code:'1111'}), /duplicate/); ok('funciones de códigos (PIN, cajeras, duplicado)');
   for (let i = 0; i < 5; i++) await db.rpc('verify_cashier_code', {p_code:'0000'});
   await assert.rejects(db.rpc('verify_cashier_code', {p_code:'1111'}), e => e.code === 'locked'); ok('el servidor frena tras 5 fallos (locked)');
+  // un solo canal de tiempo real para toda la tabla
+  const f4 = createFake(); await f4.sb.auth.signInWithPassword({email:'admin@test.local', password:'admin123'}); let canales = 0; const oc = f4.sb.channel; f4.sb.channel = n => { canales++; return oc(n); };
+  const db4 = CajaDB.create(f4.sb); ['products', 'flavors', 'stock', 'sales', 'days'].forEach(c => db4.collection(c).onSnapshot(() => {})); await sleep(100);
+  assert.strictEqual(canales, 1); ok('cinco consultas en vivo comparten un solo canal de tiempo real');
   console.log('\nTodas las pruebas de la capa de datos pasaron.');
   process.exit(0);
 })().catch(e => { console.error('FALLO', e); process.exit(1); });

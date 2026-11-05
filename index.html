@@ -368,7 +368,6 @@ a.btn{display:inline-flex;align-items:center;justify-content:center;text-decorat
 html{-webkit-tap-highlight-color:transparent}
 button,a,select,input,.tile,.go{touch-action:manipulation}
 @media (prefers-reduced-motion:no-preference){
-  html{scroll-behavior:smooth}
   .btn,.tile,.go,.card,.nav a,.in,input,select,.pill{transition:background-color .15s,border-color .15s,box-shadow .2s,transform .15s,opacity .15s,color .15s}
   .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.14)}
   .btn:active:not(:disabled){transform:scale(.97);box-shadow:none}
@@ -379,7 +378,7 @@ button,a,select,input,.tile,.go{touch-action:manipulation}
   .tbl tbody tr{transition:background-color .15s}
   .tbl tbody tr:hover{background:color-mix(in srgb,var(--soft) 55%,transparent)}
   input:focus,select:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
-  #view.fadein :is(.go,.stat,.card,.tile,.obox,.vh){animation:rise .4s cubic-bezier(.2,.8,.2,1) both}
+  #view.fadein :is(.go,.stat,.card,.obox,.vh){animation:rise .4s cubic-bezier(.2,.8,.2,1) both}
   #view.fadein :is(.go,.stat,.card,.tile):nth-child(2){animation-delay:.04s}
   #view.fadein :is(.go,.stat,.card,.tile):nth-child(3){animation-delay:.08s}
   #view.fadein :is(.go,.stat,.card,.tile):nth-child(4){animation-delay:.12s}
@@ -1486,9 +1485,11 @@ function rpcErr(e){
 async function loadSecrets(){
   try {
     const [has, names] = await Promise.all([S.db.rpc('pin_status'), S.db.rpc('code_names')]);
-    S.lock = has ? {has:true} : null;
-    const u = {}; (names || []).forEach(n => { u[n] = true; }); S.codes = {users:u};
+    const u = {}; (names || []).forEach(n => { u[n] = true; });
+    const next = JSON.stringify([!!has, Object.keys(u).sort()]), same = next === S._sec && S.loaded.lock;
+    S._sec = next; S.lock = has ? {has:true} : null; S.codes = {users:u};
     S.loaded.lock = S.loaded.codes = true;
+    if (same) return;                      // sin cambios: no se vuelve a pintar la pantalla
   } catch (e) { S.err = (e && e.code) || 'codes'; }
   render();
 }
