@@ -742,11 +742,18 @@ function paintHeader(){
   wb.style.display = codes ? '' : 'none';
   if (codes) { wb.textContent = S.session ? S.session + ' · Salir' : 'Entrar a cobrar'; wb.dataset.act = S.session ? 'logout' : 'login'; }
   const st = $('#status');
-  const state = S.loadFailed ? 'off' : (S.online ? 'on' : 'wait');
+  const net = S.net || {online:true, pending:0, failed:0};
+  let state = S.loadFailed ? 'off' : (S.online ? 'on' : 'wait'), label;
+  if (!net.online) { state = 'off'; label = 'Sin internet'; }
+  else if (net.pending) { state = 'wait'; label = 'Enviando ' + net.pending + '…'; }
+  else label = {on:'En línea', off:'Sin conexión', wait:'Conectando…'}[state];
+  if (!net.online && net.pending) label += ' · ' + net.pending + ' por enviar';
   st.dataset.s = state;
-  st.textContent = {on:'En línea', off:'Sin conexión', wait:'Conectando…'}[state];
+  st.textContent = label;
   let b = '';
-  if (S.loadFailed) b = 'No logramos conectar con los datos. Revisa el internet; lo que ves puede estar desactualizado.';
+  if (!net.online) b = 'Sin internet. Puedes seguir cobrando: lo que guardes se queda en este equipo y se envía solo cuando vuelva la conexión.' + (net.pending ? ' <b>Pendientes de enviar: ' + net.pending + '.</b>' : '') + ' No cierres la sesión ni borres los datos del navegador hasta que se envíe.';
+  else if (net.failed) b = net.failed + ' cambio' + (net.failed === 1 ? '' : 's') + ' guardado' + (net.failed === 1 ? '' : 's') + ' sin internet no lo aceptó el servidor (por ejemplo, una autorización vencida). Revisa las ventas del día. <button class="btn sm" data-act="dropfailed">Entendido</button>';
+  else if (S.loadFailed) b = 'No logramos conectar con los datos. Revisa el internet; lo que ves puede estar desactualizado.';
   else if (S.err) b = 'Hay un problema con los datos de la caja (' + esc(S.err) + '). Recarga la página.';
   $('#banner').innerHTML = b ? `<div class="note"><div class="wrap">${b}</div></div>` : '';
   paintStrip();
@@ -800,6 +807,10 @@ function viewInicio(){
   let state = '';
   if (dd.closed) state = `<div class="obox"><b>La caja de hoy está cerrada${dd.closedBy ? ' por ' + esc(dd.closedBy) : ''}.</b><span class="muted">Puede reabrirla quien esté autorizado, con su código, en Apertura y cierre.</span><a class="btn" href="#cierre">Ir a Apertura y cierre</a></div>`;
   else if (!isOpen(dd)) state = `<div class="obox"><b>La caja de hoy todavía no está abierta.</b><span class="muted">Cuenta el efectivo con el que empiezas y regístralo para poder cobrar.</span><a class="btn pri" href="#cierre">Abrir caja</a></div>`;
+  if (S.isAdmin && S.loaded.shop) {
+    const lb = +S.shop.lastBackup || 0, age = lb ? (Date.now() - lb) / 864e5 : 99;
+    if (age > 7) state += `<div class="obox"><b>${lb ? 'Hace ' + Math.floor(age) + ' días que no descargas un respaldo.' : 'Aún no has descargado ningún respaldo.'}</b><span class="muted">Es una copia de todos los datos del negocio. Tarda unos segundos.</span><button class="btn pri" data-act="backup">Descargar respaldo</button></div>`;
+  }
   const pend = n ? `<div class="obox"><b>Tienes un pedido sin cobrar:</b><span>${n} producto${n === 1 ? '' : 's'} · ${money(T.total)}</span><a class="btn pay" href="#caja">Continuar el pedido</a></div>` : '';
   const heldN = S.held.length ? `<div class="obox"><b>${S.held.length} pedido${S.held.length === 1 ? '' : 's'} en espera en este equipo.</b><a class="btn" href="#caja">Ir a la Caja</a></div>` : '';
   const al = alertsReady() ? alerts() : null;
@@ -1131,15 +1142,16 @@ async function confirmPay(btn){
   const sale = {
     ts:now, day:dayKey(now), code:pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + '-' + Math.random().toString(36).slice(2, 4).toUpperCase(),
     cashier:S.cashier, items:S.cart.map(({id, name, price, qty, cat, fl, fn, ex, exn, exp, xp}) => ({id, name, price, qty, cat, ...(fl && fl.length ? {fl, fn} : {}), ...(ex && ex.length ? {ex, exn, exp, xp} : {})})),
-    subtotal:T.sub, discount:T.disc, total:T.total, method, ...(pays.length > 1 ? {pays} : {}), received, change, ref:rf, ...(T.disc > 0 ? {discAuth:true} : {})
+    subtotal:T.sub, discount:T.disc, total:T.total, method, ...(pays.length > 1 ? {pays} : {}), received, change, ref:rf, ...(T.disc > 0 ? {discAuth:true, ...(S.discTok ? {authToken:S.discTok} : {})} : {})
   };
   btn.disabled = true;
   try { await withTimeout(p.doc.set(sale), 15000); }
   catch (e) { btn.disabled = false; fail(e, 'No se pudo guardar la venta. El pedido sigue aquí; intenta otra vez (no se duplica).'); return; }
-  const saved = {id:p.doc.id, ...sale};
-  S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; saveCart();
+  const saved = {id:p.doc.id, ...sale}; delete saved.authToken;
+  S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; S.discTok = ''; saveCart();
   closeModal(); paint();
   openSale(saved, true);
+  if (store.get('autoprint', false) && S.dl) setTimeout(() => A.tdlh(), 250);
 }
 function openSale(s, fresh){
   S.sel = {s, fresh};
@@ -1156,6 +1168,7 @@ function openSale(s, fresh){
     <pre class="ticket">${ticketLogo() ? `<img class="tlogo" src="${ticketLogo()}" alt="">` : ''}${esc(ticketText(s))}</pre>
     ${fresh ? '<p class="muted sm">Para imprimir: pulsa «Ticket con logo (imprimir)» y se abre la ventana de impresión (elige la impresora térmica).</p>' : ''}
     ${extra}
+    ${fresh && S.dl ? `<label class="muted sm" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" data-autoprint${store.get('autoprint', false) ? ' checked' : ''} style="width:18px;height:18px"> Imprimir el ticket solo al cobrar (en este equipo)</label>` : ''}
     <div class="dlg-act">${S.dl ? '<button class="btn" data-act="tdlh">Ticket con logo (imprimir)</button><button class="btn" data-act="tdl">.txt</button>' : ''}<button class="btn" data-act="tcopy">Copiar</button><button class="btn pri" data-act="mclose">${fresh ? 'Nueva venta' : 'Cerrar'}</button></div>`);
 }
 
@@ -1282,9 +1295,9 @@ function idleOut(){
 }
 
 /* ───────── Autorización con el código del administrador ───────── */
-function askPin(title, cb, why){
+function askPin(title, cb, why, kind){
   if (!S.lock) { toast('Primero crea el código de acceso en Ajustes.'); return; }
-  S.auth = {cb};
+  S.auth = {cb, kind};
   openModal(`<h2 id="mt">${esc(title)}</h2><p class="muted">${esc(why || 'Escribe el código del administrador.')}</p>${pinInput('apin', 'Código')}
     <div class="dlg-act"><button class="btn" data-act="mclose">Cancelar</button><button class="btn pri" data-act="authgo">Autorizar</button></div>`);
 }
@@ -1472,9 +1485,26 @@ const whoSelect = (id, label) => codesOn()
   : `<div class="fld"><label for="${id}">${label}</label><select id="${id}"><option value="">Elige quién eres…</option>${openers().map(n => `<option>${esc(n)}</option>`).join('')}</select></div>`;
 /* Con códigos personales, el código identifica a quien abre o cierra; sin códigos, se elige el nombre de la lista. */
 /* Devuelve el nombre, '' si el código no es de nadie, o null si no se pudo comprobar (ya se avisó). */
+/* Sin internet no se puede preguntar al servidor: solo valen los códigos que ya se usaron bien antes en este equipo
+   (se guarda una huella del código, nunca el código). */
+async function codeHash(v){
+  let salt = store.get('csalt', ''); if (!salt) { salt = Math.random().toString(36).slice(2) + Date.now().toString(36); store.set('csalt', salt); }
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + '|' + v));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 async function codeOwner(v){
-  try { const n = await S.db.rpc('verify_cashier_code', {p_code:v}); return n && (S.shop.cashiers || []).includes(n) ? n : ''; }
-  catch (e) { rpcErr(e); return null; }
+  try {
+    const n = await S.db.rpc('verify_cashier_code', {p_code:v});
+    const ok = n && (S.shop.cashiers || []).includes(n) ? n : '';
+    if (ok && window.crypto && crypto.subtle) { try { const h = await codeHash(v), m = store.get('codes', {}); Object.keys(m).forEach(k => { if (m[k] === ok) delete m[k]; }); m[h] = ok; store.set('codes', m); } catch {} }
+    return ok;
+  } catch (e) {
+    if (e && e.code === 'unavailable' && window.crypto && crypto.subtle) {
+      try { const n = (store.get('codes', {}))[await codeHash(v)]; if (n && (S.shop.cashiers || []).includes(n)) return n; } catch {}
+      toast('Sin internet: solo entran códigos que ya se usaron antes en este equipo.'); return '';
+    }
+    rpcErr(e); return null;
+  }
 }
 function rpcErr(e){
   if (e && e.code === 'locked') { S.lockUntil = Date.now() + 60000; toast('Demasiados intentos. Espera un minuto.'); }
@@ -1484,7 +1514,14 @@ function rpcErr(e){
 /* Vuelve a leer quién tiene PIN y qué cajeras tienen código (nunca llegan los códigos, solo los nombres). */
 async function loadSecrets(){
   try {
-    const [has, names] = await Promise.all([S.db.rpc('pin_status'), S.db.rpc('code_names')]);
+    let has, names;
+    try { [has, names] = await Promise.all([S.db.rpc('pin_status'), S.db.rpc('code_names')]); store.set('sec', [has, names]); }
+    catch (e) {
+      if (!e || e.code !== 'unavailable') throw e;
+      if (S.loaded.lock) return;                          // sin internet: se queda lo último que se supo
+      const c = store.get('sec', null); if (!c) return;
+      has = c[0]; names = c[1];
+    }
     const u = {}; (names || []).forEach(n => { u[n] = true; });
     const next = JSON.stringify([!!has, Object.keys(u).sort()]), same = next === S._sec && S.loaded.lock;
     S._sec = next; S.lock = has ? {has:true} : null; S.codes = {users:u};
@@ -1633,6 +1670,7 @@ function viewCierre(){
         <div class="diff ${cls}" style="margin-top:12px">${t}</div>
         ${dd.note ? `<p class="muted" style="margin-top:10px">Nota: ${esc(dd.note)}</p>` : ''}
         ${after ? `<p style="margin-top:10px"><span class="pill low">${after} venta${after > 1 ? 's' : ''} después del cierre</span></p>` : ''}
+        <p style="margin-top:12px"><button class="btn" data-act="wa">Enviar resumen por WhatsApp</button></p>
         ${reopenHTML(isToday, counted)}</div>`;
   } else if (!opened) {
     cierre = '<div class="card"><h3>3. Cierre de caja</h3><p class="muted">Primero abre la caja. El cierre se hace al terminar el día.</p></div>';
@@ -1782,13 +1820,69 @@ function ajustesHTML(){
       <div class="fld"><label for="shopfoot">Mensaje al final del ticket</label><input id="shopfoot" data-sf="footer" maxlength="40" value="${esc(S.shop.footer)}" placeholder="¡Gracias por tu compra!"></div></div>
       <div class="rowf"><div class="fld"><label for="shopaddr">Dirección (opcional)</label><input id="shopaddr" data-sf="address" maxlength="40" value="${esc(S.shop.address || '')}"></div>
       <div class="fld"><label for="shopphone">Teléfono (opcional)</label><input id="shopphone" data-sf="phone" maxlength="20" value="${esc(S.shop.phone || '')}"></div></div>
+      <div class="fld" style="max-width:420px"><label for="shopwa">WhatsApp para el resumen del cierre (opcional)</label><input id="shopwa" data-sf="waPhone" inputmode="tel" maxlength="20" placeholder="Con código de país, ej. 18095551234" value="${esc(S.shop.waPhone || '')}"></div>
       <div class="fld"><span class="lbl">Logo (sale arriba en la pantalla y en el ticket con logo)</span><div class="logo-prev">${logoSrc() ? `<figure style="margin:0;text-align:center"><img src="${logoSrc()}" alt="Logo" style="background:#fff"><figcaption class="muted sm">En pantalla</figcaption></figure><figure style="margin:0;text-align:center"><img src="${ticketLogo()}" alt="Logo del ticket"><figcaption class="muted sm">En el ticket</figcaption></figure>` : '<span class="muted">Sin logo</span>'}
         <label class="btn" style="display:inline-flex;align-items:center;cursor:pointer">Elegir imagen<input id="logofile" type="file" accept="image/*" hidden></label>${logoSrc() ? '<button class="btn" data-act="logodel">Quitar</button>' : ''}</div></div>
       ${logoSrc() ? `<div class="fld" style="max-width:340px"><label for="logomode">Logo en el ticket</label><select id="logomode" data-sf="logoMode"><option value="color"${S.shop.logoMode === 'bw' ? '' : ' selected'}>A color, tal como es</option><option value="bw"${S.shop.logoMode === 'bw' ? ' selected' : ''}>Blanco y negro (para térmica)</option></select></div>` : ''}</section>
     <section class="sec"><h2>Cajeros</h2><div style="display:flex;flex-wrap:wrap;gap:8px">${chips || '<span class="muted">Aún no hay cajeros.</span>'}</div>
       <div class="rowf"><div class="fld"><label for="newc">Agregar cajero</label><input id="newc" maxlength="24" autocomplete="off"></div><button class="btn" data-act="addc">Agregar</button></div>${openersBlock()}</section>
+    ${backupBlock()}
     ${codesBlock()}
     ${pinSection()}`;
+}
+function closeSummary(day){
+  const st = dayStats(day), dd = st.dd, m = n => money(n);
+  const lines = [`*${S.shop.name || 'Un Momento Rolled'}* · Cierre del ${dayLabel(day)}`, ''];
+  lines.push(`Ventas: *${m(dd.totals ? dd.totals.total : st.total)}* (${dd.totals ? dd.totals.count : st.ok.length} tickets)`);
+  lines.push(`• Efectivo: ${m(st.m.cash)}`, `• Tarjeta: ${m(st.m.card)}`, `• Transferencia: ${m(st.m.transfer)}`);
+  const disc = r2(st.ok.reduce((a, x) => a + (+x.discount || 0), 0));
+  if (disc > 0) lines.push(`Descuentos: ${m(disc)}`);
+  if (st.voided.length) lines.push(`Anuladas: ${st.voided.length}`);
+  if (st.retAll > 0) lines.push(`Retiros de caja: ${m(st.retAll)}`);
+  lines.push('', `Apertura: ${m(dd.fondo != null ? dd.fondo : st.fondo)}${dd.openedBy ? ' (' + dd.openedBy + ')' : ''}`);
+  if (dd.closed) {
+    lines.push(`Contado al cerrar: ${m(dd.counted)}${dd.closedBy ? ' (' + dd.closedBy + ')' : ''}`);
+    const df = dd.diff != null ? +dd.diff : 0;
+    lines.push(Math.abs(df) < 0.005 ? 'Cuadre: ✅ exacto' : df > 0 ? `Cuadre: sobran ${m(df)}` : `Cuadre: faltan ${m(-df)}`);
+    if (dd.note) lines.push('Nota: ' + dd.note);
+  }
+  return lines.join('\n');
+}
+function backupBlock(){
+  const lb = +S.shop.lastBackup || 0;
+  return `<section class="sec"><h2>Respaldo de los datos</h2><p class="muted">Descarga una copia de todo: ventas, productos, inventario, cierres y ajustes. Guárdala en tu correo o en una memoria USB. ${lb ? 'Último respaldo: <b>' + esc(new Date(lb).toLocaleString('es-DO')) + '</b>.' : '<b>Todavía no has descargado ninguno.</b>'} Se recomienda una vez por semana.</p>
+    <div class="rowf"><button class="btn pri" data-act="backup">Descargar respaldo completo</button><button class="btn" data-act="backupx">Descargar en Excel</button></div></section>`;
+}
+async function fetchAllDocs(){
+  const out = [], PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const {data, error} = await S.sb.from('docs').select('col,id,data').order('col').order('id').range(from, from + PAGE - 1);
+    if (error) throw error;
+    out.push(...(data || [])); if (!data || data.length < PAGE) break;
+  }
+  return out;
+}
+async function doBackup(kind){
+  if (!S.dl) return;
+  toast('Preparando el respaldo…');
+  try {
+    const rows = await fetchAllDocs(), stamp = dayKey();
+    if (kind === 'xlsx') {
+      if (!window.XLSX) { toast('No se pudo cargar Excel. Usa el respaldo completo.'); return; }
+      const wb = XLSX.utils.book_new(), by = {};
+      rows.forEach(r => { (by[r.col] = by[r.col] || []).push(r); });
+      Object.keys(by).sort().forEach(col => {
+        const keys = [...new Set(by[col].flatMap(r => Object.keys(r.data || {})))];
+        const aoa = [['id', ...keys], ...by[col].map(r => [r.id, ...keys.map(k => { const v = (r.data || {})[k]; return v !== null && typeof v === 'object' ? JSON.stringify(v) : v === undefined ? '' : v; })])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), col.slice(0, 31));
+      });
+      await S.dl.save({filename:'respaldo-un-momento-rolled-' + stamp + '.xlsx', data:new Uint8Array(XLSX.write(wb, {bookType:'xlsx', type:'array'}))});
+    } else {
+      await S.dl.save({filename:'respaldo-un-momento-rolled-' + stamp + '.json', data:JSON.stringify({app:'Un Momento Rolled', version:1, at:new Date().toISOString(), count:rows.length, docs:rows})});
+    }
+    await S.db.doc('settings/shop').update({lastBackup:Date.now()}).catch(() => {});
+    toast('Respaldo descargado (' + rows.length + ' registros).');
+  } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo preparar el respaldo. Revisa el internet.'); }
 }
 function productosHTML(){
   const rows = sortedProducts().map(p => `<tr>
@@ -1962,13 +2056,14 @@ async function copyText(t){
 }
 
 /* ───────── Eventos ───────── */
-const heldFrom = () => ({id:'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ts:Date.now(), by:S.cashier, cart:S.cart, disc:S.disc, discAuth:S.discAuth});
+const heldFrom = () => ({id:'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ts:Date.now(), by:S.cashier, cart:S.cart, disc:S.disc, discAuth:S.discAuth, discTok:S.discTok || ''});
 const A = {
   login(){ openLogin(); },
   acctout(){
-    const go = async () => { try { await S.sb.auth.signOut(); } catch {} location.reload(); };
+    const go = async () => { store.set('acct', null); try { S.db.clearLocal(); localStorage.removeItem('caja.codes'); } catch {} try { await S.sb.auth.signOut(); } catch {} location.reload(); };
     go();
   },
+  dropfailed(){ S.db.dropFailed(); },
   logout(){ S.session = ''; S.cashier = ''; clearTimeout(idleT); paint(); toast('Sesión cerrada.'); },
   async loginok(){
     if (S.lockUntil > Date.now()) { toast('Espera unos segundos antes de intentar otra vez.'); return; }
@@ -2015,31 +2110,32 @@ const A = {
   hold(){
     if (!S.cart.length) return;
     if (S.held.length >= 8) { toast('Ya hay 8 pedidos en espera. Cobra o descarta alguno.'); return; }
-    S.held.push(heldFrom()); S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; saveCart(); saveHeld(); paint();
+    S.held.push(heldFrom()); S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; S.discTok = ''; saveCart(); saveHeld(); paint();
     toast('Pedido en espera. Para retomarlo toca su botón, arriba del pedido.');
   },
   hres(id){
     const h = S.held.find(x => x.id === id); if (!h) return;
     const rest = S.held.filter(x => x.id !== id);
     if (S.cart.length) rest.push(heldFrom());
-    S.held = rest; S.cart = h.cart; S.disc = h.disc || {v:0, t:'amt'}; S.discAuth = !!h.discAuth; S.hdel = null;
+    S.held = rest; S.cart = h.cart; S.disc = h.disc || {v:0, t:'amt'}; S.discAuth = !!h.discAuth; S.discTok = h.discTok || ''; S.hdel = null;
     saveCart(); saveHeld(); paint();
   },
   hdel(id){
     if (S.hdel !== id) { S.hdel = id; paint(); setTimeout(() => { if (S.hdel === id) { S.hdel = null; render(); } }, 4000); return; }
     S.hdel = null; S.held = S.held.filter(x => x.id !== id); saveHeld(); paint(); toast('Pedido en espera descartado.');
   },
-  discask(){ askPin('Autorizar descuento', () => { S.discAuth = true; paint(); setTimeout(() => { const e = $('#disc'); if (e) e.focus(); }, 60); }, 'Un descuento necesita el código del administrador.'); },
-  discoff(){ S.discAuth = false; S.disc = {v:0, t:'amt'}; paint(); },
+  discask(){ askPin('Autorizar descuento', tok => { S.discAuth = true; S.discTok = tok; paint(); setTimeout(() => { const e = $('#disc'); if (e) e.focus(); }, 60); }, 'Un descuento necesita el código del administrador.', 'discount'); },
+  discoff(){ S.discAuth = false; S.discTok = ''; S.disc = {v:0, t:'amt'}; paint(); },
   async authgo(){
     const a = S.auth; if (!a) return;
     if (S.lockUntil > Date.now()) { toast('Espera unos segundos antes de intentar otra vez.'); return; }
     const inp = $('#apin'), v = inp ? inp.value : '';
     if (!v) { toast('Escribe el código.'); return; }
-    const ok = await checkAdminPin(v);
-    if (ok === null) return;
+    let ok, tok = '';
+    if (a.kind) { try { tok = await S.db.rpc('grant_auth', {p_pin:v, p_kind:a.kind}); ok = !!tok; } catch (e) { rpcErr(e); return; } }
+    else { ok = await checkAdminPin(v); if (ok === null) return; }
     if (!ok) { toast('Código incorrecto.'); if (inp) { inp.value = ''; inp.focus(); } return; }
-    closeModal(); a.cb();
+    closeModal(); a.cb(tok);
   },
   flok(){ const fp = S.fp; if (!fp || fp.sel.length !== +fp.p.scoops) return; const p = fp.p, sel = fp.sel.slice(); closeModal(); if (needExtras(p)) openExtras(p, sel); else pushLine(p, sel); },
   xok(){ const x = S.xp; if (!x) return; const p = x.p, fl = x.fl, sel = x.sel.slice(); closeModal(); pushLine(p, fl, sel); },
@@ -2088,6 +2184,12 @@ const A = {
       }
     } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo descargar el archivo.'); }
   },
+  wa(){
+    const num = String(S.shop.waPhone || '').replace(/\D/g, '');
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(closeSummary(S.day)), '_blank', 'noopener');
+  },
+  backup(){ doBackup('json'); },
+  backupx(){ doBackup('xlsx'); },
   pcopen(){ S.sheet = false; S.pc = {supplier:'', paid:false, lines:[], ref:S.db.collection('purchases').doc()}; openModal(pcHTML()); },
   pcadd(){
     pcRead();
@@ -2154,7 +2256,7 @@ const A = {
     S.delW = null;
     if (await write(() => S.db.doc('waste/' + id).delete())) { toast('Registro quitado.'); paint(); }
   },
-  clear(){ S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; saveCart(); paint(); },
+  clear(){ S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; S.discTok = ''; saveCart(); paint(); },
   sheet(){ S.sheet = !S.sheet; paint(); },
   pay(){ openPay(); },
   mclose(){ closeModal(); },
@@ -2169,9 +2271,9 @@ const A = {
     const base = $('#vreason').value, note = ($('#vnote').value || '').trim().slice(0, 80);
     if (base === 'Otro' && !note) { toast('Escribe el detalle del motivo.'); return; }
     const reason = (base + (note ? ' — ' + note : '')).slice(0, 120), by = S.cashier;
-    askPin('Autorizar anulación', async () => {
-      if (await write(() => S.db.doc('voids/' + s.id).set({reason, by, ts:Date.now(), authorized:true, total:s.total, cashier:s.cashier || '', day:s.day || ''}))) toast('Venta anulada.');
-    }, 'Ticket ' + (s.code || '') + ' por ' + money(s.total) + '. Escribe el código del administrador.');
+    askPin('Autorizar anulación', async tok => {
+      if (await write(() => S.db.doc('voids/' + s.id).set({reason, by, ts:Date.now(), authorized:true, total:s.total, cashier:s.cashier || '', day:s.day || '', authToken:tok}))) toast('Venta anulada.');
+    }, 'Ticket ' + (s.code || '') + ' por ' + money(s.total) + '. Escribe el código del administrador.', 'void');
   },
   voidundo(){
     const s = S.sel.s;
@@ -2315,6 +2417,7 @@ document.addEventListener('change', async e => {
     await write(() => S.db.doc('flavors/' + id).update({[f]:v}));
     return;
   }
+  if (t.dataset.autoprint !== undefined) { store.set('autoprint', t.checked); if (t.checked) toast('Desde ahora el ticket se imprime solo al cobrar en este equipo.'); return; }
   if (t.dataset.fondo !== undefined) { await saveDay(S.day, {fondo:Math.max(0, parseFloat(t.value) || 0)}); return; }
   if (t.dataset.opener !== undefined) {
     const names = [...document.querySelectorAll('[data-opener]')].filter(b => b.checked).map(b => b.dataset.opener);
@@ -2403,7 +2506,8 @@ function showGate(msg, opts){
 }
 async function enter(){
   let w = null;
-  try { w = await S.db.rpc('whoami'); } catch (e) { showGate('No se pudo conectar. Revisa el internet y recarga la página.', {noaccess:true}); return; }
+  try { w = await S.db.rpc('whoami'); if (w) store.set('acct', w); }
+  catch (e) { w = e && e.code === 'unavailable' ? store.get('acct', null) : null; if (!w) { showGate('No se pudo conectar. Revisa el internet y recarga la página.', {noaccess:true}); return; } }
   if (!w) { showGate('Esta cuenta no tiene acceso a la caja. Pide a quien administra que la habilite.', {noaccess:true}); return; }
   S.acct = w; S.isAdmin = w.role === 'admin';
   const g = $('#gate'); S.booting = false; listen(); paint();
@@ -2415,6 +2519,7 @@ async function boot(){
   if (!cfg || !lib || !CD) { S.booting = false; showGate('Falta la configuración de la aplicación.', {noaccess:true}); return; }
   S.sb = lib.createClient(cfg.url, cfg.key, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:false}});
   S.db = CD.create(S.sb);
+  S.net = S.db.status(); S.db.onStatus(st => { S.net = st; paintHeader(); });
   S.dl = {save: async ({filename, data}) => {
     const blob = new Blob([data], {type: /\.xlsx$/.test(filename) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : /\.csv$/.test(filename) ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
@@ -2423,6 +2528,7 @@ async function boot(){
   S.sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') setTimeout(() => location.reload(), 0); });
   let session = null;
   try { session = (await S.sb.auth.getSession()).data.session; } catch {}
+  if (!session && store.get('acct', null) && Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k))) session = {offline:true};   // sin internet: la sesión guardada sigue valiendo
   if (session) { await enter(); }
   else { S.booting = false; showGate(); }
 }

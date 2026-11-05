@@ -53,6 +53,40 @@ let n = 0; const ok = m => console.log('OK   ' + m);
   const f4 = createFake(); await f4.sb.auth.signInWithPassword({email:'admin@test.local', password:'admin123'}); let canales = 0; const oc = f4.sb.channel; f4.sb.channel = n => { canales++; return oc(n); };
   const db4 = CajaDB.create(f4.sb); ['products', 'flavors', 'stock', 'sales', 'days'].forEach(c => db4.collection(c).onSnapshot(() => {})); await sleep(100);
   assert.strictEqual(canales, 1); ok('cinco consultas en vivo comparten un solo canal de tiempo real');
+  // ── autorización en el servidor ──
+  const f5 = createFake(); f5.state.pin = '1234'; await f5.sb.auth.signInWithPassword({email:'caja@test.local', password:'caja123'});
+  const db5 = CajaDB.create(f5.sb, {storage:null});
+  await db5.doc('sales/n1').set({ts:1, subtotal:100, total:100, discount:0}); ok('cajero guarda una venta sin descuento');
+  await assert.rejects(db5.doc('sales/n2').set({ts:2, subtotal:100, total:90, discount:10}), e => e.code === 'invalid_argument'); ok('descuento sin autorización: el servidor lo rechaza');
+  await assert.rejects(db5.doc('voids/n1').set({reason:'x'}), e => e.code === 'invalid_argument'); ok('anulación sin autorización: rechazada');
+  assert.strictEqual(await db5.rpc('grant_auth', {p_pin:'0000', p_kind:'discount'}), null); ok('código incorrecto no da autorización');
+  const tk = await db5.rpc('grant_auth', {p_pin:'1234', p_kind:'discount'});
+  await db5.doc('sales/n2').set({ts:2, subtotal:100, total:90, discount:10, authToken:tk}); assert.strictEqual(f5.get('sales', 'n2').authToken, undefined); ok('con la autorización el descuento se guarda (y la ficha no queda)');
+  await assert.rejects(db5.doc('sales/n3').set({ts:3, subtotal:100, total:90, discount:10, authToken:tk}), e => e.code === 'invalid_argument'); ok('la autorización es de un solo uso');
+  const tv = await db5.rpc('grant_auth', {p_pin:'1234', p_kind:'void'});
+  await assert.rejects(db5.doc('sales/n4').set({ts:4, subtotal:100, total:50, discount:50, authToken:tv}), e => e.code === 'invalid_argument'); ok('una ficha de anulación no sirve para un descuento');
+
+  // ── modo sin internet ──
+  const mem = {}; const storage = {getItem:k => (k in mem ? mem[k] : null), setItem:(k, v) => { mem[k] = String(v); }, removeItem:k => { delete mem[k]; }, key:i => Object.keys(mem)[i], get length(){ return Object.keys(mem).length; }};
+  const f6 = createFake(); await f6.sb.auth.signInWithPassword({email:'caja@test.local', password:'caja123'}); f6.seed('products', 'p1', {name:'Cono', price:60});
+  const db6 = CajaDB.create(f6.sb, {storage});
+  let lastP = null, fromC = null; db6.collection('products').onSnapshot(s => { lastP = s.docs.map(d => d.id); fromC = s.metadata.fromCache; }); const sales6 = []; db6.collection('sales').orderBy('ts', 'desc').onSnapshot(s => sales6.push(s.docs.map(d => d.id)));
+  await sleep(80); assert.deepStrictEqual(lastP, ['p1']); assert.ok(Object.keys(mem).some(k => k.startsWith('caja.c.products'))); ok('lo leído se guarda en el equipo para leerlo sin internet');
+  f6.state.offline = true;
+  await db6.doc('sales/o1').set({ts:10, subtotal:60, total:60, discount:0}); await db6.doc('sales/o2').set({ts:20, subtotal:60, total:60, discount:0}); await sleep(80);
+  assert.strictEqual(db6.status().pending, 2); assert.strictEqual(db6.status().online, false); assert.deepStrictEqual(sales6.at(-1), ['o2', 'o1']); assert.strictEqual(f6.get('sales', 'o1'), undefined); ok('sin internet la venta se acepta, se ve en pantalla y queda pendiente');
+  assert.ok(JSON.parse(mem['caja.q']).length === 2); ok('la cola se guarda en el equipo (sobrevive a recargar la página)');
+  await db6.doc('stock/p1').set({base:5}); await db6.doc('stock/p1').update({base:4}); assert.strictEqual(db6.status().pending, 4); ok('también se encolan stock y cambios, en orden');
+  // la página se recarga sin internet: lee de lo guardado
+  const db7 = CajaDB.create(f6.sb, {storage}); let p7 = null, c7 = null; db7.collection('products').onSnapshot(s => { p7 = s.docs.map(d => d.id); c7 = s.metadata.fromCache; }); const s7 = []; db7.collection('sales').orderBy('ts', 'desc').onSnapshot(s => s7.push(s.docs.map(d => d.id)));
+  await sleep(120); assert.deepStrictEqual(p7, ['p1']); assert.strictEqual(c7, true); assert.deepStrictEqual(s7.at(-1), ['o2', 'o1']); assert.strictEqual(db7.status().pending, 4); ok('al abrir sin internet se ve lo último guardado y las ventas pendientes');
+  f6.state.offline = false;
+  await db6.flush(); await sleep(150);
+  assert.ok(f6.get('sales', 'o1') && f6.get('sales', 'o2')); assert.strictEqual(f6.get('stock', 'p1').base, 4); assert.strictEqual(db6.status().pending, 0); assert.strictEqual(db6.status().online, true); ok('al volver el internet todo se envía en orden y la cola queda vacía');
+  await db6.doc('sales/o1').set({ts:10, subtotal:60, total:60, discount:0}); assert.strictEqual(f6.all('sales').filter(x => x.id === 'o1').length, 1); ok('reenviar una venta no la duplica');
+  // el servidor rechaza una operación encolada
+  f6.state.offline = true; await db6.doc('sales/o9').set({ts:90, subtotal:100, total:80, discount:20}); f6.state.offline = false; await db6.flush(); await sleep(60);
+  assert.strictEqual(db6.status().pending, 0); assert.strictEqual(db6.status().failed, 1); ok('lo que el servidor rechaza se separa y avisa (no se reintenta para siempre)');
   console.log('\nTodas las pruebas de la capa de datos pasaron.');
   process.exit(0);
 })().catch(e => { console.error('FALLO', e); process.exit(1); });

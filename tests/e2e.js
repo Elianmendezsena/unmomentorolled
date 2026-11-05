@@ -44,6 +44,13 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   ok(!(await page.evaluate(() => document.body.innerText + JSON.stringify(Object.keys(window).filter(k => /pin|hash|code/i.test(k))))).includes('1234'), 'el PIN no queda visible en la página');
   const cc = page.locator('[data-cc="0"]'); await cc.waitFor({timeout:3000}); await cc.fill('4321'); await page.click('[data-act="ccsave"][data-i="0"]'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => window.__f.state.codes.Ana === '4321'), 'el código de Ana queda en el servidor');
+  // respaldo completo (descarga de un archivo con todos los datos)
+  const [dlf] = await Promise.all([page.waitForEvent('download', {timeout:8000}), page.click('[data-act="backup"]')]);
+  const bk = JSON.parse(fs.readFileSync(await dlf.path(), 'utf8'));
+  console.log('   archivo:', dlf.suggestedFilename(), JSON.stringify(bk.docs.map(d => d.col)));
+  ok(/^respaldo-un-momento-rolled-\d{4}-\d\d-\d\d\.json$/.test(dlf.suggestedFilename()) && bk.docs.some(d => d.col === 'products') && bk.docs.some(d => d.col === 'settings'), 'el respaldo se descarga con todos los datos (' + bk.count + ' registros)');
+  await page.waitForTimeout(500);
+  ok(await page.evaluate(() => !!window.__f.get('settings', 'shop').lastBackup), 'queda anotada la fecha del último respaldo');
   await page.evaluate(() => window.__persist());
 
   // cerrar sesión (admin directo) y entrar con la cuenta de la caja
@@ -70,10 +77,37 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   ok((await page.locator('#printframe').getAttribute('srcdoc')).includes('Palomitas'), 'el marco contiene el ticket');
   await page.click('[data-act="mclose"]').catch(() => {}); await page.waitForTimeout(300);
 
+  // descuento: exige el código del administrador y el servidor lo comprueba
+  await page.click('[data-add="pop"]'); await page.click('[data-act="discask"]'); await page.waitForSelector('#apin');
+  await page.fill('#apin', '0000'); await page.click('[data-act="authgo"]'); await page.waitForTimeout(400);
+  ok((await page.textContent('#toast')).includes('incorrecto'), 'descuento con código malo se rechaza');
+  await page.fill('#apin', '1234'); await page.click('[data-act="authgo"]'); await page.waitForSelector('#disc'); await page.fill('#disc', '10'); await page.waitForTimeout(200);
+  await page.click('.order [data-act="pay"]'); await page.waitForTimeout(300); await page.click('[data-pm="cash"]'); await page.fill('#recv', '100'); await page.click('#confirm'); await page.waitForTimeout(900);
+  const dsale = await page.evaluate(() => window.__f.all('sales').find(s => s.discount > 0));
+  ok(dsale && dsale.total === 50 && dsale.authToken === undefined, 'la venta con descuento se guardó con autorización: ' + JSON.stringify(dsale && [dsale.discount, dsale.total]));
+  await page.click('[data-act="mclose"]').catch(() => {}); await page.waitForTimeout(300);
+
+  // sin internet: se cobra igual y se envía solo al volver
+  await page.evaluate(() => { window.__f.state.offline = true; window.dispatchEvent(new Event('offline')); }); await page.waitForTimeout(200);
+  await page.click('[data-add="pop"]'); await page.click('.order [data-act="pay"]'); await page.waitForTimeout(300); await page.click('[data-pm="cash"]'); await page.fill('#recv', '100'); await page.click('#confirm'); await page.waitForTimeout(900);
+  ok(await page.locator('.dlg, [role="dialog"]').count() > 0 && (await page.textContent('#status')).includes('por enviar'), 'sin internet la venta se acepta y queda por enviar: ' + (await page.textContent('#status')));
+  ok((await page.textContent('#banner')).includes('Sin internet'), 'sale el aviso de que no hay internet');
+  ok(await page.evaluate(() => window.__f.all('sales').length) === 2, 'todavía no llegó al servidor');
+  await page.click('[data-act="mclose"]').catch(() => {});
+  await page.evaluate(() => { window.__f.state.offline = false; window.dispatchEvent(new Event('online')); }); await page.waitForTimeout(2500);
+  ok(await page.evaluate(() => window.__f.all('sales').length) === 3, 'al volver el internet la venta llegó sola');
+  ok(!(await page.textContent('#status')).includes('por enviar') && !(await page.textContent('#banner')).includes('Sin internet'), 'el aviso desaparece');
+
   // la cuenta de caja cierra sesión directamente (sin pedir PIN)
   await page.goto(base + '#cierre'); await page.waitForTimeout(700);
   const vend = (await page.textContent('#view')).replace(/\s+/g, ' ');
-  ok(/Vendido/.test(vend) && /RD\$\s?60\.00/.test(vend) && /1 ticket/.test(vend), 'el cuadre muestra cuánto se vendió (RD$ 60.00, 1 ticket)');
+  ok(/Vendido/.test(vend) && /RD\$\s?170\.00/.test(vend) && /3 tickets/.test(vend), 'el cuadre muestra cuánto se vendió (RD$ 170.00, 3 tickets)');
+  // cerrar el día y mandar el resumen por WhatsApp
+  await page.fill('#counted', '1660'); await page.fill('#cwho', '4321').catch(() => {}); await page.click('[data-act="closeday"]'); await page.waitForTimeout(900);
+  await page.evaluate(() => { window.__wa = ''; window.open = u => { window.__wa = u; return null; }; });
+  await page.click('[data-act="wa"]'); await page.waitForTimeout(200);
+  const wurl = await page.evaluate(() => window.__wa);
+  ok(/wa\.me/.test(wurl) && decodeURIComponent(wurl).includes('Cierre del') && decodeURIComponent(wurl).includes('Ventas:'), 'el resumen de WhatsApp se arma con los totales: ' + decodeURIComponent(wurl).slice(0, 140).replace(/\n/g, ' | '));
   await page.locator('#outbtn').click(); await page.waitForSelector('#g-mail', {timeout:5000});
   ok(await page.locator('#apin').count() === 0, 'la cuenta de caja cierra sesión sin pedir el PIN');
   ok(await page.locator('.gate .glogo').count() === 1 && await page.locator('.gate .glogo').evaluate(i => i.complete && i.naturalWidth > 0), 'el logo aparece en la pantalla de entrada');

@@ -5,7 +5,8 @@
   function createFake(opts = {}) {
     const rows = new Map();                 // "col|id" -> {col,id,data,ts,day}
     const listeners = new Set();
-    const state = {pin:null, codes:{}, attempts:{pin:0, code:0}, session:null, calls:[]};
+    const state = {pin:null, codes:{}, attempts:{pin:0, code:0}, session:null, calls:[], offline:false, tokens:{}};
+    const netErr = () => ({data:null, error:{message:'TypeError: Failed to fetch'}});
     const users = opts.users || {'admin@test.local':{password:'admin123', role:'admin', name:'Admin'}, 'caja@test.local':{password:'caja123', role:'cajero', name:'Caja'}};
     const deny = opts.deny || (() => false);
     const who = () => (state.session ? {role:users[state.session.email].role, name:users[state.session.email].name} : null);
@@ -16,9 +17,21 @@
     const colVal = (r, c) => c === 'col' ? r.col : c === 'id' ? r.id : c === 'ts' ? r.ts : c === 'day' ? r.day : (c.startsWith('data->>') ? String(r.data[c.slice(7)]) : undefined);
     const OPS = {gte:(a, b) => a >= b, gt:(a, b) => a > b, lte:(a, b) => a <= b, lt:(a, b) => a < b, eq:(a, b) => a == b, neq:(a, b) => a != b};
 
+    /* Imita el disparador del servidor: venta con descuento o anulación necesitan la ficha de un solo uso (salvo administradores). */
+    function authGuard(p, old) {
+      const w = who(); if (!w || w.role === 'admin' || old) { if (p.data) delete p.data.authToken; return null; }
+      let kind = null;
+      if (p.col === 'sales' && ((+p.data.discount || 0) > 0.001 || (+p.data.subtotal || 0) - (+p.data.total || 0) > 0.011)) kind = 'discount';
+      if (p.col === 'voids') kind = 'void';
+      const tk = p.data.authToken; delete p.data.authToken;
+      if (!kind) return null;
+      if (!tk || state.tokens[tk] !== kind) return {data:null, error:{code:'42501', message:'needs_authorization'}};
+      delete state.tokens[tk]; return null;
+    }
     function builder(table) {
       const q = {op:'select', filters:[], order:null, limit:null, range:null, payload:null, o:{}};
       const run = async () => {
+        if (state.offline) return netErr();
         if (!state.session && !opts.anon) return {data:null, error:{code:'PGRST301', message:'JWT required'}};
         state.calls.push(q.op + ':' + table);
         if (q.op === 'select') {
@@ -26,10 +39,11 @@
           if (q.order) { const [c, asc] = q.order; l.sort((a, b) => { const x = colVal(a, c), y = colVal(b, c); return x === y ? 0 : ((x == null) ? 1 : (y == null) ? -1 : (x > y ? 1 : -1)) * (asc ? 1 : -1); }); }
           if (q.range) l = l.slice(q.range[0], q.range[1] + 1);
           if (q.limit) l = l.slice(0, q.limit);
-          return {data:l.map(r => ({id:r.id, data:clone(r.data)})), error:null};
+          return {data:l.map(r => ({col:r.col, id:r.id, data:clone(r.data)})), error:null};
         }
         if (q.op === 'upsert') {
           const p = q.payload, k = p.col + '|' + p.id, old = rows.get(k);
+          const guard = authGuard(p, old); if (guard) return guard;
           if (deny(old ? 'update' : 'insert', p.col)) return {data:null, error:rls(p.col)};
           if (old && q.o.ignoreDuplicates) return {data:null, error:null};
           const r = {col:p.col, id:p.id, data:clone(p.data), ...gen(p.data)}; rows.set(k, r); emit(old ? 'UPDATE' : 'INSERT', r); return {data:null, error:null};
@@ -52,12 +66,18 @@
     const need = (role) => { const w = who(); if (!w) return err('42501', 'forbidden'); if (role === 'admin' && w.role !== 'admin') return err('42501', 'forbidden'); return null; };
     async function rpc(name, a = {}) {
       state.calls.push('rpc:' + name);
+      if (state.offline) return netErr();
       if (name === 'whoami') return {data:who(), error:null};
       let e = need(['set_admin_pin', 'set_cashier_code', 'delete_cashier_code'].includes(name) ? 'admin' : 'staff'); if (e) return e;
       if (name === 'doc_merge') {
         const k = a.p_col + '|' + a.p_id, r = rows.get(k);
         if (!r || deny('update', a.p_col)) return err('P0002', 'not_found');
         r.data = {...r.data, ...clone(a.p_patch)}; Object.assign(r, gen(r.data)); emit('UPDATE', r); return {data:null, error:null};
+      }
+      if (name === 'grant_auth') {
+        if (state.attempts.pin >= 5) return err('P0001', 'locked');
+        if (state.pin && a.p_pin === state.pin) { state.attempts.pin = 0; const t = 'tok' + Math.random().toString(36).slice(2); state.tokens[t] = a.p_kind; return {data:t, error:null}; }
+        state.attempts.pin++; return {data:null, error:null};
       }
       if (name === 'pin_status') return {data:!!state.pin, error:null};
       if (name === 'check_admin_pin') {
