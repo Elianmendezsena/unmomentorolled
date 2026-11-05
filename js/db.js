@@ -67,7 +67,7 @@
 
     /* Consulta en vivo: se lee de inmediato (sin esperar al tiempo real) y luego llegan los cambios. */
     function live(col, where, order, limit, onList, onErr, onlyId){
-      const rows = new Map(); let ready = false, queue = [], dead = false, emitT = 0;
+      const rows = new Map(); let ready = false, queue = [], dead = false, emitT = 0, sig = '';
       const list = () => {
         let l = [...rows.entries()].map(([id, data]) => ({id, data})).filter(r => matches(r.data, where));
         if (order) l.sort(sorter(order)); else l.sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -82,8 +82,10 @@
         if (dead) return;
         try {
           const rs = await fetchRows(col, where, order, limit, onlyId);
+          const nsig = JSON.stringify(rs);
           rows.clear(); rs.forEach(r => rows.set(r.id, r.data || {}));
-          ready = true; queue.forEach(apply); queue = []; if (!dead) onList(list());
+          const had = queue.length; ready = true; queue.forEach(apply); queue = [];
+          if (!dead && (nsig !== sig || had)) { sig = nsig; onList(list()); }   // si nada cambió, no se repinta la pantalla
         } catch (e) { if (onErr) onErr(toErr(e)); }
       };
       const handle = {col, reload:load, push(p){ if (!ready) { queue.push(p); return; } apply(p); emit(); },
@@ -133,11 +135,18 @@
       doc:path => { const i = path.indexOf('/'); return docRef(path.slice(0, i), path.slice(i + 1)); },
       /* Funciones del servidor (códigos y PIN). Devuelve el resultado o lanza un error con .code */
       async rpc(name, args){ const {data, error} = await sb.rpc(name, args || {}); if (error) throw toErr(error); return data; },
-      reloadAll(){ lives.forEach(h => h.reload()); }
+      /* Relectura escalonada (no todas a la vez) para no trabar la pantalla. */
+      reloadAll(){ let i = 0; lives.forEach(h => { setTimeout(() => h.reload(), 120 * i++); }); }
     };
     if (root.addEventListener) {
       root.addEventListener('online', () => db.reloadAll());
-      if (root.document) root.document.addEventListener('visibilitychange', () => { if (!root.document.hidden) db.reloadAll(); });
+      /* Al volver a la pestaña solo se relee si estuvo oculta un buen rato; el tiempo real ya trae los cambios recientes. */
+      let hiddenAt = 0;
+      if (root.document) root.document.addEventListener('visibilitychange', () => {
+        if (root.document.hidden) { hiddenAt = Date.now(); return; }
+        if (hiddenAt && Date.now() - hiddenAt > 120000) db.reloadAll();
+        hiddenAt = 0;
+      });
     }
     return db;
   }

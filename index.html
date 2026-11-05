@@ -2364,7 +2364,7 @@ function listen(){
   db.collection('sales').where('ts', '>=', S.winStart).orderBy('ts', 'desc').limit(1000).onSnapshot(snap => { S.sales = snap.docs.map(d => ({id:d.id, ...d.data()})); mark('sales', snap); }, err('sales'));
   db.collection('cashouts').where('ts', '>=', S.winStart).orderBy('ts', 'desc').limit(500).onSnapshot(snap => { S.cashouts = snap.docs.map(d => ({id:d.id, ...d.data()})); mark('cashouts', snap); }, err('cashouts'));
   db.collection('cashins').where('ts', '>=', S.winStart).orderBy('ts', 'desc').limit(500).onSnapshot(snap => { S.cashins = snap.docs.map(d => ({id:d.id, ...d.data()})); mark('cashins', snap); }, err('cashins'));
-  loadSecrets(); setInterval(loadSecrets, 60000); window.addEventListener('focus', loadSecrets);
+  loadSecrets(); setInterval(() => { if (!document.hidden) loadSecrets(); }, 120000);
   db.collection('voids').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { o[d.id] = d.data(); }); S.voids = o; mark('voids', snap); }, err('voids'));
   db.collection('days').orderBy('day', 'desc').limit(30).onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { o[d.id] = d.data(); }); S.days = o; mark('days', snap); }, err('days'));
   db.doc('settings/shop').onSnapshot(snap => {
