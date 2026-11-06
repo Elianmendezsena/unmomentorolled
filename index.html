@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/supabase.js"></script>
+<script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
 <script src="js/db.js"></script>
 <style>
@@ -643,12 +644,30 @@ function alerts(){
   activeFlavors().forEach(f => { const c = fStock(f); if (c !== null && c <= fLow(f)) out.push({name:f.name, out:c <= 0, txt:'quedan ' + fmtN(c) + ' bolas (' + tubsTxt(f, Math.max(0, c)) + ')'}); });
   return out;
 }
+function restockText(){
+  const a = alerts(), lines = [`*${S.shop.name || 'Un Momento Rolled'}* · Por reponer (${dayLabel(dayKey())})`, ''];
+  a.forEach(x => lines.push('• ' + x.name + ': ' + (x.out ? 'AGOTADO' : x.txt)));
+  return lines.join('\n');
+}
+function openWA(text){
+  const num = String(S.shop.waPhone || '').replace(/\D/g, '');
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+}
 function alertsStrip(){
   if (!alertsReady()) return '';
   const a = alerts(); if (!a.length) return '';
-  return `<div class="alerts"><b>Por agotarse</b>${a.slice(0, 8).map(x => `<span class="pill ${x.out ? 'out' : 'low'}">${esc(x.name)}: ${x.out ? 'agotado' : x.txt}</span>`).join('')}${a.length > 8 ? `<span class="muted sm">y ${a.length - 8} más</span>` : ''}<a href="#inventario">Ver inventario</a></div>`;
+  return `<div class="alerts"><b>Por agotarse</b>${a.slice(0, 8).map(x => `<span class="pill ${x.out ? 'out' : 'low'}">${esc(x.name)}: ${x.out ? 'agotado' : x.txt}</span>`).join('')}${a.length > 8 ? `<span class="muted sm">y ${a.length - 8} más</span>` : ''}<a href="#inventario">Ver inventario</a><button class="btn sm" data-act="restockwa">Enviar lista por WhatsApp</button></div>`;
 }
 const logoBwSrc = () => /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(S.shop.logoBw || '') ? S.shop.logoBw : '';
+function ticketQR(){
+  try {
+    const ig = String(S.shop.instagram || '').replace(/^@/, '').trim();
+    let u = String(S.shop.qrUrl || '').trim() || (ig ? 'https://instagram.com/' + ig : '');
+    if (!u || !window.qrcode) return '';
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    const q = window.qrcode(0, 'M'); q.addData(u); q.make(); return q.createDataURL(6, 2);
+  } catch { return ''; }
+}
 const ticketLogo = () => S.shop.logoMode === 'bw' ? (logoBwSrc() || logoSrc()) : logoSrc();
 const logoSrc = () => /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(S.shop.logo || '') ? S.shop.logo : '';
 
@@ -709,6 +728,8 @@ function ticketText(s){
   if (s.ref) out.push('Ref: ' + s.ref);
   out.push('-'.repeat(W));
   out.push(c(S.shop.footer || '¡Gracias por tu compra!'));
+  const ig = String(S.shop.instagram || '').replace(/^@/, '').trim();
+  if (ig) out.push(c('Instagram: @' + ig));
   return out.join('\n');
 }
 
@@ -823,6 +844,7 @@ function viewInicio(){
     const lb = +S.shop.lastBackup || 0, age = lb ? (Date.now() - lb) / 864e5 : 99;
     if (age > 7) state += `<div class="obox"><b>${lb ? 'Hace ' + Math.floor(age) + ' días que no descargas un respaldo.' : 'Aún no has descargado ningún respaldo.'}</b><span class="muted">Es una copia de todos los datos del negocio. Tarda unos segundos.</span><button class="btn pri" data-act="backup">Descargar respaldo</button></div>`;
   }
+  if (S.isAdmin && new Date().getDay() === 1 && store.get('wkseen', '') !== dayKey()) state += `<div class="obox"><b>Es lunes: mira cómo te fue en la semana.</b><span class="muted">Ventas, lo más vendido, lo que no se mueve y los cuadres.</span><button class="btn pri" data-act="wkgo">Ver resumen</button></div>`;
   const pend = n ? `<div class="obox"><b>Tienes un pedido sin cobrar:</b><span>${n} producto${n === 1 ? '' : 's'} · ${money(T.total)}</span><a class="btn pay" href="#caja">Continuar el pedido</a></div>` : '';
   const heldN = S.held.length ? `<div class="obox"><b>${S.held.length} pedido${S.held.length === 1 ? '' : 's'} en espera en este equipo.</b><a class="btn" href="#caja">Ir a la Caja</a></div>` : '';
   const al = alertsReady() ? alerts() : null;
@@ -892,6 +914,15 @@ function topSold(prods){
   S.sales.forEach(x => { if (x._void) return; (x.items || []).forEach(i => { if (ids.has(i.id)) agg[i.id] = (agg[i.id] || 0) + (+i.qty || 0); }); });
   return Object.entries(agg).sort((x, y) => y[1] - x[1]).slice(0, 6).map(([id]) => prods.find(p => p.id === id));
 }
+function popMap(){
+  if (S.shop.popSort === 'off' || !S.loaded.sales) return null;
+  if (!S._pop) {                                   // se calcula una vez por sesión, para que los productos no cambien de lugar mientras se cobra
+    const ok = S.sales.filter(x => !x._void && !S.voids[x.id]); if (ok.length < 5) return null;
+    const m = {}; ok.forEach(x => (x.items || []).forEach(i => { m[i.id] = (m[i.id] || 0) + (+i.qty || 0); })); S._pop = m;
+  }
+  return S._pop;
+}
+const popSorted = list => { const m = popMap(); if (!m) return list; return list.map((p, i) => [p, i]).sort((a, b) => (m[b[0].id] || 0) - (m[a[0].id] || 0) || a[1] - b[1]).map(x => x[0]); };
 function prodsHTML(){
   const prods = activeProducts();
   if (norm(S.q).trim()) {
@@ -902,7 +933,7 @@ function prodsHTML(){
   const shown = S.cat === 'todos' ? cats : cats.filter(c => c.id === S.cat);
   const fav = S.cat === 'todos' && S.loaded.sales ? topSold(prods) : [];
   const favH = fav.length >= 3 ? `<h2 class="cat-head">Los más pedidos</h2><div class="grid">${fav.map(tile).join('')}</div>` : '';
-  return favH + shown.map(c => `<h2 class="cat-head">${esc(c.name)}</h2><div class="grid">${prods.filter(p => p.cat === c.id).map(tile).join('')}</div>`).join('');
+  return favH + shown.map(c => `<h2 class="cat-head">${esc(c.name)}</h2><div class="grid">${popSorted(prods.filter(p => p.cat === c.id)).map(tile).join('')}</div>`).join('');
 }
 function viewCaja(){
   if (!S.loaded.products) return loading('Cargando productos…', 'grid');
@@ -1421,13 +1452,35 @@ function repCompute(){
   return R;
 }
 const barList = (rows, fmt) => { const max = Math.max(1, ...rows.map(r => r[1])); return `<ul class="top">${rows.map(([n, v, x]) => `<li><span>${esc(n)}</span><b>${fmt(v, x)}</b><i style="--w:${Math.max(4, Math.round(v / max * 100))}%"></i></li>`).join('')}</ul>`; };
+function periodSummary(R){
+  const m = n => money(n), L = [`*${S.shop.name || 'Un Momento Rolled'}* · Resumen del ${dayLabel(R.a)}${R.a === R.b ? '' : ' al ' + dayLabel(R.b)}`, ''];
+  const avg = R.ok.length ? R.total / R.ok.length : 0;
+  L.push(`Vendido: *${m(R.total)}* en ${R.ok.length} tickets (promedio ${m(avg)})`);
+  L.push(`• Efectivo ${m(R.m.cash)} · Tarjeta ${m(R.m.card)} · Transferencia ${m(R.m.transfer)}`);
+  const days = Object.entries(R.byDay).sort((x, y) => y[1].total - x[1].total);
+  if (days.length > 1) L.push(`Mejor día: ${dayLabel(days[0][0])} (${m(days[0][1].total)})`);
+  const hrs = R.byHour.map((v, i) => i).filter(i => R.byHour[i].count);
+  if (hrs.length) { const pk = R.byHour.reduce((b, v, i) => v.total > R.byHour[b].total ? i : b, 0); L.push(`Hora de más ventas: ${hourTxt(pk)}`); }
+  const top = Object.entries(R.byProd).sort((x, y) => y[1].qty - x[1].qty).slice(0, 5);
+  if (top.length) { L.push('', '*Más vendidos*'); top.forEach(([n, p], i) => L.push(`${i + 1}. ${n} — ${p.qty} (${m(p.amt)})`)); }
+  const none = activeProducts().filter(p => p.cat !== 'extras' && !R.byProd[p.name]).map(p => p.name);
+  if (none.length) L.push('', '*Sin ventas en el período*', none.slice(0, 8).join(', ') + (none.length > 8 ? ' y ' + (none.length - 8) + ' más' : ''));
+  L.push('');
+  if (R.disc > 0) L.push(`Descuentos: ${m(R.disc)}`);
+  if (R.bad.length) L.push(`Anuladas: ${R.bad.length}`);
+  if (R.pcTotal > 0) L.push(`Compras: ${m(R.pcTotal)}`);
+  const dif = Object.entries(S.days).filter(([d, x]) => d >= R.a && d <= R.b && x.closed && Math.abs(+x.diff || 0) >= 0.005);
+  if (dif.length) L.push(`Cuadres con diferencia: ${dif.length} (${dif.map(([d, x]) => dayLabel(d) + ' ' + (x.diff > 0 ? '+' : '') + m(x.diff)).join(', ')})`);
+  else L.push('Cuadres: sin diferencias ✅');
+  return L.join('\n');
+}
 function viewReportes(){
   const g = gate(false); if (g) return g;
   if (!S.loaded.voids || !S.loaded.purchases || !S.loaded.waste) return loading('Cargando…');
   ensureReport();
   const [a, b] = rangeDates();
   const seg = [['hoy', 'Hoy'], ['7d', '7 días'], ['mes', 'Este mes'], ['mespas', 'Mes pasado'], ['otro', 'Fechas']].map(([k, n]) => `<button data-rk="${k}" aria-pressed="${S.rk === k}">${n}</button>`).join('');
-  const head = `<div class="vh"><h2>Reportes</h2><button class="btn sm" data-act="rfresh">Actualizar</button>${S.dl ? '<button class="btn pri sm" data-act="xlsx">Descargar Excel</button>' : ''}</div>
+  const head = `<div class="vh"><h2>Reportes</h2><button class="btn sm" data-act="rfresh">Actualizar</button>${S.dl ? '<button class="btn pri sm" data-act="xlsx">Descargar Excel</button>' : ''}<button class="btn sm" data-act="wkwa">Resumen por WhatsApp</button></div>
     <div class="rng"><span class="seg" role="group" aria-label="Período">${seg}</span>
       ${S.rk === 'otro' ? `<div class="fld"><label for="rfrom">Desde</label><input id="rfrom" type="date" value="${a}"></div><div class="fld"><label for="rto">Hasta</label><input id="rto" type="date" value="${b}"></div>` : ''}
       <span class="muted sm">${a === b ? dayLabel(a) : dayLabel(a) + ' al ' + dayLabel(b)}</span></div>`;
@@ -1832,6 +1885,9 @@ function ajustesHTML(){
   return `<div class="vh"><h2>Ajustes</h2></div>
     <section class="sec"><h2>Negocio</h2><div class="rowf"><div class="fld"><label for="shopname">Nombre que sale en el ticket</label><input id="shopname" data-sf="name" maxlength="40" value="${esc(S.shop.name)}"></div>
       <div class="fld"><label for="shopfoot">Mensaje al final del ticket</label><input id="shopfoot" data-sf="footer" maxlength="40" value="${esc(S.shop.footer)}" placeholder="¡Gracias por tu compra!"></div></div>
+      <div class="rowf"><div class="fld"><label for="shopig">Instagram del negocio (sin @)</label><input id="shopig" data-sf="instagram" maxlength="40" placeholder="unmomentorolled" value="${esc(S.shop.instagram || '')}"></div>
+      <div class="fld"><label for="shopqr">Enlace del código QR del ticket (opcional)</label><input id="shopqr" data-sf="qrUrl" maxlength="200" inputmode="url" placeholder="Si lo dejas vacío, usa el Instagram" value="${esc(S.shop.qrUrl || '')}"></div></div>
+      <div class="fld" style="max-width:420px"><label for="shoppop">Orden de los productos en la Caja</label><select id="shoppop" data-sf="popSort"><option value="on"${S.shop.popSort === 'off' ? '' : ' selected'}>Los más vendidos primero en cada categoría</option><option value="off"${S.shop.popSort === 'off' ? ' selected' : ''}>Siempre el orden fijo del catálogo</option></select></div>
       <div class="rowf"><div class="fld"><label for="shopaddr">Dirección (opcional)</label><input id="shopaddr" data-sf="address" maxlength="40" value="${esc(S.shop.address || '')}"></div>
       <div class="fld"><label for="shopphone">Teléfono (opcional)</label><input id="shopphone" data-sf="phone" maxlength="20" value="${esc(S.shop.phone || '')}"></div></div>
       <div class="fld" style="max-width:420px"><label for="shopwa">WhatsApp para el resumen del cierre (opcional)</label><input id="shopwa" data-sf="waPhone" inputmode="tel" maxlength="20" placeholder="Con código de país, ej. 18095551234" value="${esc(S.shop.waPhone || '')}"></div>
@@ -1853,6 +1909,7 @@ function closeSummary(day){
   if (disc > 0) lines.push(`Descuentos: ${m(disc)}`);
   if (st.voided.length) lines.push(`Anuladas: ${st.voided.length}`);
   if (st.retAll > 0) lines.push(`Retiros de caja: ${m(st.retAll)}`);
+  if (alertsReady()) { const al = alerts(); if (al.length) lines.push('', '*Por reponer:*', ...al.map(x => '• ' + x.name + ': ' + (x.out ? 'AGOTADO' : x.txt))); }
   lines.push('', `Apertura: ${m(dd.fondo != null ? dd.fondo : st.fondo)}${dd.openedBy ? ' (' + dd.openedBy + ')' : ''}`);
   if (dd.closed) {
     lines.push(`Contado al cerrar: ${m(dd.counted)}${dd.closedBy ? ' (' + dd.closedBy + ')' : ''}`);
@@ -2191,8 +2248,8 @@ const A = {
   },
   async tdlh(){
     if (!S.sel || !S.dl) return;
-    const s = S.sel.s, lg = ticketLogo();
-    const html = '<!doctype html><html lang="es"><meta charset="utf-8"><title>Ticket ' + esc(s.code || '') + '</title><style>body{margin:0;background:#fff;color:#000}.t{width:72mm;margin:0 auto;padding:2mm 0;font:10px/1.3 "Courier New",monospace;text-align:center}.t img{display:block;margin:0 auto 6px;max-height:22mm;max-width:55mm}.t pre{display:block;width:max-content;margin:0 auto;white-space:pre;text-align:left;font:inherit}@media print{@page{margin:0}}</style><div class="t">' + (lg ? '<img src="' + lg + '" alt="">' : '') + '<pre>' + esc(ticketText(s)) + '</pre></div></html>';
+    const s = S.sel.s, lg = ticketLogo(), qr = ticketQR();
+    const html = '<!doctype html><html lang="es"><meta charset="utf-8"><title>Ticket ' + esc(s.code || '') + '</title><style>body{margin:0;background:#fff;color:#000}.t{width:72mm;margin:0 auto;padding:2mm 0;font:10px/1.3 "Courier New",monospace;text-align:center}.t img{display:block;margin:0 auto 6px;max-height:22mm;max-width:55mm}.t pre{display:block;width:max-content;margin:0 auto;white-space:pre;text-align:left;font:inherit}@media print{@page{margin:0}}</style><div class="t">' + (lg ? '<img src="' + lg + '" alt="">' : '') + '<pre>' + esc(ticketText(s)) + '</pre>' + (qr ? '<img src="' + qr + '" alt="" style="width:26mm;height:26mm;margin:8px auto 2px;max-height:none;image-rendering:pixelated"><div>Escanea y síguenos</div>' : '') + '</div></html>';
     /* Se imprime en la misma pestaña: un marco invisible con el ticket, sin abrir ventanas nuevas. */
     const old = document.getElementById('printframe'); if (old) old.remove();
     const fr = document.createElement('iframe'); fr.id = 'printframe'; fr.setAttribute('aria-hidden', 'true');
@@ -2217,10 +2274,10 @@ const A = {
       }
     } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo descargar el archivo.'); }
   },
-  wa(){
-    const num = String(S.shop.waPhone || '').replace(/\D/g, '');
-    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(closeSummary(S.day)), '_blank', 'noopener');
-  },
+  wa(){ openWA(closeSummary(S.day)); },
+  restockwa(){ openWA(restockText()); },
+  wkwa(){ const R = S.repR; if (!R || S.rep.loading) { toast('Espera a que carguen los datos del reporte.'); return; } openWA(periodSummary(R)); },
+  wkgo(){ store.set('wkseen', dayKey()); S.rk = '7d'; location.hash = '#reportes'; },
   backup(){ doBackup('json'); },
   backupx(){ doBackup('xlsx'); },
   pcopen(){ S.sheet = false; S.pc = {supplier:'', paid:false, lines:[], ref:S.db.collection('purchases').doc()}; openModal(pcHTML()); },

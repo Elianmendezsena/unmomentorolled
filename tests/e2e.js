@@ -51,6 +51,15 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   ok(/^respaldo-un-momento-rolled-\d{4}-\d\d-\d\d\.json$/.test(dlf.suggestedFilename()) && bk.docs.some(d => d.col === 'products') && bk.docs.some(d => d.col === 'settings'), 'el respaldo se descarga con todos los datos (' + bk.count + ' registros)');
   await page.waitForTimeout(500);
   ok(await page.evaluate(() => !!window.__f.get('settings', 'shop').lastBackup), 'queda anotada la fecha del último respaldo');
+  // Instagram + QR del ticket
+  await page.fill('#shopig', '@unmomentorolled'); await page.dispatchEvent('#shopig', 'change'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => window.__f.get('settings', 'shop').instagram) === '@unmomentorolled', 'se guarda el Instagram del negocio');
+  // resumen del período por WhatsApp
+  await page.goto(base + '#reportes'); await page.waitForSelector('[data-act="wkwa"]', {timeout:8000}); await page.click('[data-rk="7d"]'); await page.waitForTimeout(1200);
+  await page.evaluate(() => { window.__wa = ''; window.open = u => { window.__wa = u; return null; }; });
+  await page.click('[data-act="wkwa"]'); await page.waitForTimeout(200);
+  const wk = decodeURIComponent(await page.evaluate(() => window.__wa));
+  ok(/wa\.me/.test(wk) && wk.includes('Resumen del') && wk.includes('Vendido:') && wk.includes('Cuadres'), 'el resumen semanal se arma: ' + wk.slice(0, 120).replace(/\n/g, ' | '));
   // modo oscuro, políticas de uso, rollos
   const th0 = await page.evaluate(() => document.documentElement.dataset.theme || 'auto');
   await page.click('#themebtn'); const th1 = await page.evaluate(() => document.documentElement.dataset.theme);
@@ -86,6 +95,8 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.click('[data-act="tdlh"]'); await page.waitForTimeout(800);
   ok(ctx.pages().length === 1 && await page.locator('#printframe').count() === 1, 'imprimir usa la misma pestaña (marco oculto, sin ventana nueva)');
   ok((await page.locator('#printframe').getAttribute('srcdoc')).includes('Palomitas'), 'el marco contiene el ticket');
+  const fdoc = await page.locator('#printframe').getAttribute('srcdoc');
+  ok(fdoc.includes('Instagram: @unmomentorolled') && /<img src="data:image\/gif/.test(fdoc) && fdoc.includes('Escanea y síguenos'), 'el ticket trae el Instagram y un código QR');
   await page.click('[data-act="mclose"]').catch(() => {}); await page.waitForTimeout(300);
 
   // descuento: exige el código del administrador y el servidor lo comprueba
