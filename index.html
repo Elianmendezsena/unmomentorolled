@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'self' blob: data: about:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14213D">
 <script>try{var t=JSON.parse(localStorage.getItem("caja.theme"));if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
@@ -12,8 +14,6 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <script src="vendor/supabase.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
@@ -56,8 +56,19 @@
   --shadow:0 1px 2px rgba(0,0,0,.4);
   color-scheme:dark;
 }
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/bricolage-grotesque-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/figtree-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/figtree-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/figtree-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Figtree';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/figtree-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/ibm-plex-mono-latin-600-normal.woff2) format('woff2')}
 *{box-sizing:border-box}
 .prow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.prow:first-of-type{border-top:0}.prow div{display:grid;gap:2px}
+.skip{position:absolute;left:8px;top:-60px;z-index:10000;padding:10px 16px;border-radius:8px;border:2px solid var(--accent);background:var(--card);color:var(--ink);font:600 15px var(--f-body)}.skip:focus{top:8px}
+#view:focus{outline:none}
+.ldocs{display:grid;gap:8px;margin-top:6px}.ldocs .btn{justify-content:flex-start;text-align:left;width:100%}
 .omenu{position:absolute;right:0;top:100%;z-index:5;background:var(--card,#fff);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.18);padding:6px;display:grid;min-width:210px}.omenu button{text-align:left;padding:10px 12px;border-radius:8px;background:none;border:0;font:inherit;color:inherit;cursor:pointer}.omenu button:hover{background:var(--soft,rgba(128,128,128,.14))}.ord-h{position:relative}
 .kbd{display:inline-block;padding:1px 7px;border:1px solid var(--line);border-radius:6px;font:600 12px ui-monospace,monospace;background:var(--soft,rgba(128,128,128,.12))}
 .foot{padding-top:4px;padding-bottom:90px;text-align:center;font-size:13px}
@@ -326,7 +337,7 @@ a.btn{display:inline-flex;align-items:center;justify-content:center;text-decorat
 .go:hover{background:var(--soft)}
 .go small{font-weight:500;color:var(--muted)}
 .go svg{width:24px;height:24px}
-.go.main{background:var(--ink);color:var(--bg);border-color:transparent}.go.main small{color:inherit;opacity:.75}
+.go.main{background:var(--ink);color:var(--bg);border-color:transparent}.go.main small{color:inherit;opacity:1}
 .sk{display:grid;gap:12px}
 .sk i{display:block;border-radius:12px;background:linear-gradient(90deg,var(--soft) 25%,color-mix(in srgb,var(--soft) 50%,var(--card)) 50%,var(--soft) 75%);background-size:200% 100%;height:56px}
 .skg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -412,7 +423,7 @@ button,a,select,input,.tile,.go{touch-action:manipulation}
    cada categoría con su color e ícono, y el espiral del helado enrollado como marca de agua. */
 :root{
   --f-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
-  --bg:#F3F6FB; --card:#FFFFFF; --soft:#E6ECF7; --ink:#14213D; --muted:#5D6B86; --line:#DAE2F0;
+  --bg:#F3F6FB; --card:#FFFFFF; --soft:#E6ECF7; --ink:#14213D; --muted:#4F5E7A; --line:#DAE2F0;
   --accent:#2F6BDB; --on-accent:#FFFFFF; --pay:#2F6BDB; --on-pay:#FFFFFF;
   --hdr:#14213D; --on-hdr:#EEF3FF; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
   --h-helados:#F0508C; --h-frio:#3F9BEA; --h-paletas:#FF9433; --h-palomitas:#F2B90C; --h-algodon:#A67CF0; --h-extras:#2FB886;
@@ -495,9 +506,11 @@ h2{letter-spacing:-.015em}
 </style>
 </head>
 <body>
-<div class="gate" id="gate" hidden></div>
+<div class="gate" id="gate" role="region" aria-label="Entrar al sistema" hidden></div>
 
+<button type="button" class="skip" data-act="skip">Saltar al contenido</button>
 <header class="hdr">
+  <h1 class="sr" id="pgh"></h1>
   <div class="wrap">
     <div class="brand">
       <span id="brandico"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M8.5 15h15L16 31z" fill="#E3A857"/><path d="M12 18l4.5 9M16 17l3 9M20 18l-4 9" stroke="#B87E34" stroke-width="1" fill="none"/><circle cx="16" cy="12" r="7.5" fill="var(--h-helados)"/><circle cx="16" cy="6.5" r="5" fill="var(--h-extras)"/></svg></span>
@@ -514,8 +527,8 @@ h2{letter-spacing:-.015em}
   <div class="cstrip" id="cstrip" hidden></div>
 </header>
 <div id="banner"></div>
-<main class="wrap page" id="view"></main>
-<footer class="wrap foot"><button class="lnk" data-act="help">Cómo se hace</button> · <button class="lnk" data-act="policy">Políticas de uso</button> · <button class="lnk" id="themebtn" data-act="theme" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro"></button></footer>
+<main class="wrap page" id="view" tabindex="-1"></main>
+<footer class="wrap foot"><button class="lnk" data-act="help">Cómo se hace</button> · <button class="lnk" data-act="policy">Políticas de uso</button> · <button class="lnk" data-act="legal">Privacidad y términos</button> · <button class="lnk" id="themebtn" data-act="theme" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro"></button></footer>
 <div class="bar" id="bar" hidden></div>
 <div id="modal" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -761,6 +774,7 @@ function paintTheme(){
 function paintHeader(){
   paintTheme();
   $('#brand').textContent = S.shop.name || 'Heladería';
+  { const t = TABS.find(x => x[0] === S.tab); $('#pgh').textContent = (S.shop.name || 'Heladería') + ' — ' + (t ? t[1] : ''); }
   const nAl = alertsReady() ? alerts().length : 0;
   $('#nav').innerHTML = TABS.filter(([id]) => (!ADMIN_TABS.includes(id) || S.isAdmin) && (id !== 'compras' || feat('compras')))
     .map(([id, n]) => `<a href="#${id}"${S.tab === id ? ' aria-current="page"' : ''}>${n}${id === 'inventario' && nAl ? `<span class="bdg" title="Por agotarse">${nAl}</span>` : ''}</a>`).join('');
@@ -889,7 +903,7 @@ function discRow(){
 function orderHTML(){
   const T = totals();
   const lines = S.cart.length ? S.cart.map(l => { const k = l.key || l.id; return `<div class="line" data-k="${esc(k)}"><div class="nm">${esc(l.name)}<small class="num">${money0(l.price)} c/u</small>${l.fn && l.fn.length ? `<small>${esc(l.fn.join(' + '))}</small>` : ''}${l.exn && l.exn.length ? `<small>+ ${esc(l.exn.join(', '))}</small>` : ''}</div>
-    <div class="step"><button data-dec="${esc(k)}" aria-label="Quitar uno de ${esc(l.name)}">−</button><button class="qbtn" data-qty="${esc(k)}" aria-label="Cambiar la cantidad de ${esc(l.name)}">${l.qty}</button><button data-inc="${esc(k)}" aria-label="Agregar uno de ${esc(l.name)}">+</button></div>
+    <div class="step"><button data-dec="${esc(k)}" aria-label="Quitar uno de ${esc(l.name)}">−</button><button class="qbtn" data-qty="${esc(k)}" aria-label="${l.qty}, cambiar la cantidad de ${esc(l.name)}">${l.qty}</button><button data-inc="${esc(k)}" aria-label="Agregar uno de ${esc(l.name)}">+</button></div>
     <div class="amt">${money(l.price * l.qty)}</div></div>`; }).join('')
     : `<div class="empty-sm">${ICO.cone}Toca un producto para empezar el pedido.</div>`;
   const heldBar = S.held.length && feat('held') ? `<div class="held"><span class="lbl-s">En espera</span>${S.held.map(h => {
@@ -1246,7 +1260,7 @@ function viewVentas(){
     <div class="sum"><div class="stat"><small>Vendido</small><b data-cn="vend:${S.day}" data-v="${st.totalAll}">${money(st.totalAll)}</b></div><div class="stat"><small>Tickets</small><b>${st.okAll.length}</b></div><div class="stat"><small>Promedio</small><b>${money(avg)}</b></div>
       <div class="stat"><small>Efectivo</small><b>${money(st.mAll.cash)}</b></div><div class="stat"><small>Tarjeta</small><b>${money(st.mAll.card)}</b></div><div class="stat"><small>Transferencia</small><b>${money(st.mAll.transfer)}</b></div></div>
     ${cfNote(list)}
-    ${list.length ? `<div class="two"><div class="scroll"><table class="tbl"><thead><tr><th>Hora</th><th>Ticket</th><th>Cajero</th><th>Pago</th><th class="num">Total</th><th></th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="4">Total · ${list.filter(x => !x._void).length} ticket${list.filter(x => !x._void).length === 1 ? '' : 's'}</td><td class="num">${money(r2(list.filter(x => !x._void).reduce((a, x) => a + x.total, 0)))}</td><td></td></tr></tfoot></table></div>
+    ${list.length ? `<div class="two"><div class="scroll"><table class="tbl"><thead><tr><th>Hora</th><th>Ticket</th><th>Cajero</th><th>Pago</th><th class="num">Total</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="4">Total · ${list.filter(x => !x._void).length} ticket${list.filter(x => !x._void).length === 1 ? '' : 's'}</td><td class="num">${money(r2(list.filter(x => !x._void).reduce((a, x) => a + x.total, 0)))}</td><td></td></tr></tfoot></table></div>
       <div class="card"><h3>Más vendidos</h3><ul class="top">${top.map(([n, q]) => `<li><span>${esc(n)}</span><b>${fmtN(q)}</b><i style="--w:${Math.max(6, Math.round(q / max * 100))}%"></i></li>`).join('')}</ul></div></div>`
       : `<div class="empty">${ICO.list}<h2>Sin ventas ${S.day === dayKey() ? 'hoy' : 'ese día'}</h2><p>Las ventas aparecen aquí apenas se cobran en la Caja.</p>${S.day === dayKey() ? '<a class="btn pri" href="#caja">Ir a cobrar</a>' : ''}</div>`}`;
 }
@@ -1362,10 +1376,10 @@ function viewCompras(){
   return `<div class="vh"><h2>Compras y merma</h2></div>
     ${S.isAdmin ? `<section class="sec"><div class="vh" style="margin:0"><h2 style="font-size:19px">Compras de mercancía</h2><button class="btn pri" data-act="pcopen">Registrar compra</button></div>
       <p class="muted">Lo que compras suma solo al inventario de lo que controles. Últimos 30 días: <b>${money(tot30)}</b>.</p>
-      ${prow ? `<div class="scroll"><table class="tbl"><thead><tr><th>Cuándo</th><th>Compra</th><th>Quién</th><th class="num">Total</th><th></th></tr></thead><tbody>${prow}</tbody><tfoot><tr><td colspan="3">Total de las compras mostradas</td><td class="num">${money(r2(pcs.reduce((a, p) => a + (+p.total || 0), 0)))}</td><td></td></tr></tfoot></table></div>` : `<div class="empty">${ICO.bag}<h2>Aún no hay compras</h2><p>Anota lo que compras para que el inventario suba solo.</p><button class="btn pri" data-act="pcopen">Registrar la primera compra</button></div>`}</section>` : ''}
+      ${prow ? `<div class="scroll"><table class="tbl"><thead><tr><th>Cuándo</th><th>Compra</th><th>Quién</th><th class="num">Total</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>${prow}</tbody><tfoot><tr><td colspan="3">Total de las compras mostradas</td><td class="num">${money(r2(pcs.reduce((a, p) => a + (+p.total || 0), 0)))}</td><td></td></tr></tfoot></table></div>` : `<div class="empty">${ICO.bag}<h2>Aún no hay compras</h2><p>Anota lo que compras para que el inventario suba solo.</p><button class="btn pri" data-act="pcopen">Registrar la primera compra</button></div>`}</section>` : ''}
     <section class="sec"><div class="vh" style="margin:0"><h2 style="font-size:19px">Merma</h2><button class="btn pri" data-act="wmopen">Registrar merma</button></div>
       <p class="muted">Lo que se derrite, se daña, vence o se regala. Se descuenta del inventario y queda anotado quién lo registró.</p>
-      ${wrow ? `<div class="scroll"><table class="tbl"><thead><tr><th>Cuándo</th><th>Qué</th><th class="num">Cantidad</th><th>Motivo</th><th>Quién</th>${S.isAdmin ? '<th></th>' : ''}</tr></thead><tbody>${wrow}</tbody></table></div>` : `<div class="empty">${ICO.cone}<h2>Sin merma registrada</h2><p>Si algo se derrite, se daña o se regala, anótalo aquí.</p><button class="btn pri" data-act="wmopen">Registrar merma</button></div>`}</section>`;
+      ${wrow ? `<div class="scroll"><table class="tbl"><thead><tr><th>Cuándo</th><th>Qué</th><th class="num">Cantidad</th><th>Motivo</th><th>Quién</th>${S.isAdmin ? '<th><span class="sr">Acciones</span></th>' : ''}</tr></thead><tbody>${wrow}</tbody></table></div>` : `<div class="empty">${ICO.cone}<h2>Sin merma registrada</h2><p>Si algo se derrite, se daña o se regala, anótalo aquí.</p><button class="btn pri" data-act="wmopen">Registrar merma</button></div>`}</section>`;
 }
 function pcItems(){
   const ps = sortedProducts().filter(p => p.track && p.active !== false).map(p => `<option value="p:${esc(p.id)}">${esc(p.name)} (${esc(p.unit || 'ud')})</option>`);
@@ -1710,7 +1724,7 @@ function viewCierre(){
       ${S.isAdmin && !closed ? (!(st.co.some(x => x.id === c.id) || st.ci.some(x => x.id === c.id)) ? '<td></td>' : `<td><button class="btn sm bad" data-act="${c.k === 'in' ? 'delci' : 'delco'}" data-id="${esc(c.id)}">${S.delCo === c.id ? '¿Seguro?' : 'Quitar'}</button></td>`) : ''}</tr>`).join('');
   const retiros = `<div class="card"><div class="vh" style="margin-bottom:10px"><h3 style="margin:0;flex:1">2. Dinero que entra y sale de la caja</h3>${canCo ? '<button class="btn sm" data-act="cashin">Añadir efectivo</button><button class="btn sm" data-act="cashout">Registrar retiro</button>' : ''}</div>
       <div class="kv"><div class="r"><span>Efectivo añadido en el día</span><b>${money(st.insAll)}</b></div><div class="r"><span>Total retirado en el día</span><b>${money(st.retAll)}</b></div><div class="r tt"><span>${isToday && !closed ? 'Debe haber en caja ahora' : 'Debía haber en caja'}</span><b>${money(st.expected)}</b></div></div>
-      ${rows ? `<div class="scroll" style="margin-top:12px"><table class="tbl"><thead><tr><th>Hora</th><th>Motivo</th><th>Quién</th><th class="num">Movimiento</th><th class="num">Quedó en caja</th>${S.isAdmin && !closed ? '<th></th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>`
+      ${rows ? `<div class="scroll" style="margin-top:12px"><table class="tbl"><thead><tr><th>Hora</th><th>Motivo</th><th>Quién</th><th class="num">Movimiento</th><th class="num">Quedó en caja</th>${S.isAdmin && !closed ? '<th><span class="sr">Acciones</span></th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>`
         : '<p class="muted" style="margin-top:10px">No se ha añadido ni sacado dinero de la caja este día.</p>'}</div>`;
 
   /* Ventas del día */
@@ -1983,13 +1997,13 @@ function productosHTML(){
       <label style="display:flex;gap:8px;align-items:center;min-height:46px;font-weight:600"><input id="np-track" type="checkbox" style="width:22px;height:22px"> Controlar inventario</label>
       <button class="btn pri" data-act="addp">Agregar</button></div></section>
     <section class="sec"><h2>Catálogo</h2><p class="muted">Los cambios se guardan al salir de cada casilla. “Visible” quita el producto de la Caja sin borrar su historial. En <b>Sabores y presentación</b> pon cuántos sabores se eligen al vender (por ejemplo 2 en “Helado 2 bolas”) y si ese producto se sirve en <b>bolas</b> o en <b>rollos</b>; con 0 no pregunta sabor.</p>
-      <div class="scroll"><table class="tbl ed"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Sabores y presentación</th><th class="num">Pide extras</th><th class="num">Inventario</th><th>Avisar con</th><th class="num">Visible</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>
+      <div class="scroll"><table class="tbl ed"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Sabores y presentación</th><th class="num">Pide extras</th><th class="num">Inventario</th><th>Avisar con</th><th class="num">Visible</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>${rows}</tbody></table></div></section>
     <section class="sec"><h2>Sabores de helado</h2><p class="muted">Cada bola vendida descuenta del sabor elegido. Una cubeta trae cierta cantidad de bolas; con eso el sistema te dice cuándo se acaba un sabor.</p>
       <div class="rowf"><div class="fld" style="flex:2 1 200px"><label for="nf-name">Nuevo sabor</label><input id="nf-name" maxlength="30" autocomplete="off"></div>
         <div class="fld" style="flex:0 1 130px"><label for="nf-tub">Bolas por cubeta</label><input id="nf-tub" type="number" inputmode="numeric" min="1" step="1" value="40"></div>
         <div class="fld" style="flex:0 1 130px"><label for="nf-low">Avisar con (bolas)</label><input id="nf-low" type="number" inputmode="numeric" min="0" step="1" value="${FLOW}"></div>
         <button class="btn pri" data-act="addf">Agregar sabor</button></div>
-      ${frows ? `<div class="scroll"><table class="tbl ed"><thead><tr><th>Sabor</th><th>Bolas por cubeta</th><th>Avisar con</th><th class="num">Disponible</th><th></th></tr></thead><tbody>${frows}</tbody></table></div>` : '<div class="empty-sm">Aún no hay sabores. Agrega el primero.</div>'}</section>`;
+      ${frows ? `<div class="scroll"><table class="tbl ed"><thead><tr><th>Sabor</th><th>Bolas por cubeta</th><th>Avisar con</th><th class="num">Disponible</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>${frows}</tbody></table></div>` : '<div class="empty-sm">Aún no hay sabores. Agrega el primero.</div>'}</section>`;
 }
 
 /* ───────── Código de Ajustes ───────── */
@@ -2000,7 +2014,7 @@ function codesBlock(){
     <td style="min-width:140px"><input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" data-cc="${i}" placeholder="4 a 6 números" aria-label="Código de ${esc(n)}"></td>
     <td><div class="adj"><button class="btn sm" data-act="ccsave" data-i="${i}">${u[n] ? 'Cambiar' : 'Asignar'}</button>${u[n] ? `<button class="btn sm bad" data-act="ccdel" data-i="${i}">Quitar</button>` : ''}</div></td></tr>`).join('');
   return `<section class="sec"><h2>Códigos para cobrar</h2><p class="muted">Cada persona escribe su código personal para cobrar, y así cada venta queda a su nombre. ${Object.keys(u).length ? '<b>Quien no tenga código no podrá cobrar.</b>' : 'Mientras no asignes ningún código, todos cobran eligiendo su nombre.'} La sesión se cierra sola tras 10 minutos sin usarla.</p>
-    <div class="scroll"><table class="tbl ed"><thead><tr><th>Cajero</th><th>Estado</th><th>Código nuevo</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+    <div class="scroll"><table class="tbl ed"><thead><tr><th>Cajero</th><th>Estado</th><th>Código nuevo</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 function openersBlock(){
   const all = S.shop.cashiers || []; if (!all.length) return '';
@@ -2130,6 +2144,50 @@ async function copyText(t){
 
 /* ───────── Eventos ───────── */
 const heldFrom = () => ({id:'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ts:Date.now(), by:S.cashier, cart:S.cart, disc:S.disc, discAuth:S.discAuth, discTok:S.discTok || ''});
+const LEGAL = {
+priv: ['Política de privacidad', `
+  <p>Esta política explica qué datos usa el sistema de caja de <b>Un Momento Rolled</b>, para qué y quién los ve. Lo usa solo el personal de la tienda; los clientes no crean cuentas ni escriben datos en él.</p>
+  <h3>1. Qué datos se guardan</h3>
+  <p><b>Del personal:</b> correo y rol de la cuenta del equipo, y el nombre de cada cajero con su código personal (el código se guarda cifrado, nunca en texto legible).</p>
+  <p><b>Del negocio:</b> ventas, productos, inventario, movimientos y cuadres de caja, y las referencias de transferencia que el cajero escriba. No se piden nombre, teléfono, cédula ni dirección del cliente. Si alguien escribe datos de un cliente en un campo libre, deben ser los mínimos necesarios.</p>
+  <h3>2. Para qué se usan</h3>
+  <p>Solo para cobrar, controlar el inventario, cuadrar la caja y generar los reportes de la tienda. No se venden, no se usan para publicidad y no se usan para perfilar a nadie.</p>
+  <h3>3. Con quién se comparten (proveedores)</h3>
+  <p><b>Supabase:</b> base de datos y autenticación donde se guardan los datos del negocio (servidores en Estados Unidos). <b>GitHub Pages:</b> aloja la página; como todo sitio web, registra la dirección IP de quien la abre. <b>WhatsApp:</b> solo si el personal toca un botón para enviar un resumen; el mensaje lo prepara el sistema y lo envía la persona. <b>Instagram:</b> el ticket trae un código QR al perfil de la tienda; el cliente decide si lo abre. Los tipos de letra están incluidos en la propia página: no se piden a Google.</p>
+  <p>No se usa Google Analytics ni ninguna herramienta de seguimiento, publicidad o análisis de comportamiento.</p>
+  <h3>4. Cuánto tiempo se guardan</h3>
+  <p>Los registros de ventas y de caja se conservan mientras la tienda los necesite para su contabilidad y obligaciones legales. Los datos guardados en el equipo se borran al limpiar los datos del navegador.</p>
+  <h3>5. Seguridad</h3>
+  <p>El acceso exige cuenta y código; la conexión va cifrada; los permisos dependen del rol y los descuentos y anulaciones exigen autorización del administrador. Ningún sistema es infalible: avisa de inmediato a la administración si pierdes un equipo o crees que alguien usó tu código.</p>
+  <h3>6. Tus derechos</h3>
+  <p>Conforme a la Ley 172-13 de protección de datos personales de la República Dominicana, puedes pedir acceso, rectificación, actualización o supresión de tus datos personales. Escribe a la administración de la tienda (WhatsApp o Instagram del ticket). Algunos registros contables no pueden borrarse mientras exista obligación legal de conservarlos.</p>
+  <h3>7. Cambios</h3>
+  <p>Si esta política cambia, se actualizará la fecha indicada abajo.</p>`],
+cook: ['Cookies y almacenamiento en el equipo', `
+  <p><b>Este sistema no usa cookies</b> de seguimiento, publicidad ni análisis, y no incluye herramientas de terceros que las instalen.</p>
+  <h3>Qué se guarda en el equipo</h3>
+  <p>Para funcionar (y para cobrar sin internet) el navegador guarda en este equipo: la sesión de la cuenta, el tema claro/oscuro, copias recientes de productos e inventario, las ventas aún no enviadas y una versión cifrada de los códigos de cajero. Todo es <b>estrictamente necesario</b> para el servicio que el personal pide al abrir la página.</p>
+  <h3>¿Hace falta aceptar cookies?</h3>
+  <p>No. El consentimiento se exige para cookies o almacenamiento <i>no esenciales</i> (publicidad, análisis, seguimiento). Aquí solo hay almacenamiento esencial, así que no se muestra banner; basta con informarlo, como hace esta página.</p>
+  <h3>Cómo borrarlo</h3>
+  <p>Cerrar sesión cierra la cuenta. Para borrar todo del equipo, limpia los datos del sitio en el navegador. <b>Antes, confirma que no haya ventas pendientes de enviar</b> (aviso de pendientes en pantalla) o se perderían.</p>`],
+term: ['Términos y condiciones', `
+  <p>Regulan el uso del sistema de caja de <b>Un Momento Rolled</b>. Es una herramienta interna para el personal autorizado; no es una tienda en línea ni se ofrece al público.</p>
+  <h3>1. Quién puede usarlo</h3><p>Solo personal autorizado por la tienda, con la cuenta del equipo y su código personal.</p>
+  <h3>2. Uso permitido</h3><p>Cobrar, controlar inventario y cuadrar caja, según las Políticas de uso. Está prohibido acceder a datos sin permiso, saltarse las autorizaciones o alterar registros para ocultar diferencias.</p>
+  <h3>3. Precios y tickets</h3><p>Los precios son los que la tienda configura. El ticket del sistema es un comprobante interno de venta y <b>no sustituye un comprobante fiscal (NCF)</b>; si el cliente lo requiere, la tienda debe emitirlo por su medio autorizado.</p>
+  <h3>4. Disponibilidad</h3><p>El sistema se ofrece «tal cual». Puede haber interrupciones del internet o de los proveedores; por eso permite cobrar sin conexión y envía los datos al volver. La tienda debe hacer respaldos periódicos (Ajustes › Respaldo).</p>
+  <h3>5. Responsabilidad</h3><p>Cada persona responde por las operaciones hechas con su código. La tienda no responde por pérdidas causadas por el uso indebido de un código o por borrar los datos del navegador con ventas pendientes.</p>
+  <h3>6. Cambios y ley aplicable</h3><p>Estos términos pueden actualizarse y se rigen por las leyes de la República Dominicana.</p>`],
+refu: ['Política de reembolsos y devoluciones', `
+  <p>Aplica a los clientes de <b>Un Momento Rolled</b>. Por ser un producto elaborado al momento y perecedero:</p>
+  <h3>1. Cuándo se repone o se devuelve</h3><p>Si el pedido salió equivocado, incompleto o con un defecto de preparación, se repone el producto o se devuelve el dinero, a elección del cliente, al momento de la compra o <b>el mismo día</b> con el ticket.</p>
+  <h3>2. Cuándo no aplica</h3><p>No hay devolución de helado ya consumido o mal conservado fuera del local, ni por cambio de opinión una vez entregado el producto.</p>
+  <h3>3. Cómo se devuelve el dinero</h3><p>Por el mismo medio de pago (efectivo, tarjeta o transferencia). El personal lo registra como <b>anulación</b>, que requiere autorización del administrador y queda en el historial.</p>
+  <h3>4. Alergias</h3><p>Pregunta al personal por los ingredientes antes de comprar; no se reembolsa por reacciones si la alergia no se avisó antes del pedido.</p>
+  <h3>5. Reclamos</h3><p>Escribe a la tienda por WhatsApp o Instagram con tu ticket y se atenderá lo antes posible.</p>`]
+};
+
 const A = {
   login(){ openLogin(); },
   acctout(){
@@ -2165,6 +2223,22 @@ const A = {
       <h3>8. Cuidado del equipo</h3><p>Cierra la sesión cuando termines si el equipo lo usan otras personas. La sesión de cobro se cierra sola tras un rato sin usarse.</p>
       <h3>9. Incumplimiento</h3><p>Usar el sistema de forma indebida puede llevar a que se suspenda el acceso de esa persona.</p></div>
       <div class="dlg-act"><button class="btn pri" data-act="mclose">Entendido</button></div>`);
+  },
+  legal(){
+    openModal(`<h2 id="mt">Privacidad y términos</h2><div class="pol"><p>Documentos de la tienda. Toca uno para leerlo.</p></div>
+      <div class="ldocs">
+        <button class="btn" data-act="ldoc" data-k="priv">Política de privacidad</button>
+        <button class="btn" data-act="ldoc" data-k="cook">Cookies y almacenamiento en el equipo</button>
+        <button class="btn" data-act="ldoc" data-k="term">Términos y condiciones</button>
+        <button class="btn" data-act="ldoc" data-k="refu">Política de reembolsos y devoluciones</button>
+        <button class="btn" data-act="policy">Políticas de uso del personal</button>
+      </div>
+      <div class="dlg-act"><button class="btn" data-act="mclose">Cerrar</button></div>`);
+  },
+  ldoc(el){
+    const D = LEGAL[el.dataset.k]; if (!D) return;
+    openModal(`<h2 id="mt">${D[0]}</h2><div class="pol">${D[1]}<p class="muted">Última actualización: noviembre de 2026.</p></div>
+      <div class="dlg-act"><button class="btn" data-act="legal">Volver</button><button class="btn pri" data-act="mclose">Cerrar</button></div>`);
   },
   logout(){ S.session = ''; S.cashier = ''; clearTimeout(idleT); paint(); toast('Sesión cerrada.'); },
   async loginok(){
@@ -2371,6 +2445,7 @@ const A = {
   sheet(){ S.sheet = !S.sheet; paint(); },
   pay(){ openPay(); },
   mclose(){ closeModal(); },
+  skip(){ const v = $('#view'); if (v) { v.focus(); v.scrollIntoView({block:'start'}); } },
   confirm(el){ confirmPay(el); },
   tcopy(){ if (S.sel) copyText(ticketText(S.sel.s)); },
   async csv(){ if (!S.dl) return; try { await S.dl.save({filename:'ventas-' + S.day + '.csv', data:csvDay()}); } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo descargar el archivo.'); } },
@@ -2561,6 +2636,15 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'F4') { e.preventDefault(); if (S.cart.length) A.clear(); }
   else if (e.key === '/' && !typing) { e.preventDefault(); const q = $('#q'); if (q) q.focus(); }
 });
+document.addEventListener('keydown', e => {                       // el foco no se escapa del cuadro abierto (Tab / Shift+Tab)
+  if (e.key !== 'Tab') return;
+  const m = $('#modal'); if (m.hidden) return;
+  const f = [...m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent !== null);
+  if (!f.length) return;
+  const a = document.activeElement, i = f.indexOf(a);
+  if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+  else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
+});
 document.addEventListener('click', e => { if (S.omenu && !e.target.closest('.omenu, [data-act="omenu"], [data-act="discask"], [data-act="hold"], [data-act="clear"]')) { S.omenu = false; paint(false); } });
 document.addEventListener('keydown', e => {
   if (!S.qk || $('#modal').hidden) return;
@@ -2617,7 +2701,7 @@ function showGate(msg, opts){
     <div class="fld"><label for="g-pass">Contraseña</label><input class="in" id="g-pass" type="password" autocomplete="current-password" required></div>
     <div class="msg" id="g-msg" role="alert">${esc(msg || '')}</div>
     <button class="btn pri" id="g-go" type="submit">Entrar</button>
-    <div class="gl"><button type="button" class="lnk" data-act="policy">Políticas de uso</button><button type="button" class="lnk" data-act="theme">Modo claro / oscuro</button></div></form>`;
+    <div class="gl"><button type="button" class="lnk" data-act="policy">Políticas de uso</button><button type="button" class="lnk" data-act="legal">Privacidad y términos</button><button type="button" class="lnk" data-act="theme">Modo claro / oscuro</button></div></form>`;
   $('#g-form').onsubmit = async ev => {
     ev.preventDefault();
     const b = $('#g-go'), m = $('#g-msg'); b.disabled = true; m.textContent = '';

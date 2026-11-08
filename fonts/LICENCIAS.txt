@@ -1,0 +1,5 @@
+Tipos de letra incluidos en la página (se sirven desde este mismo sitio, no desde Google):
+- Figtree (c) The Figtree Project Authors
+- Bricolage Grotesque (c) The Bricolage Grotesque Project Authors
+- IBM Plex Mono (c) IBM Corp.
+Los tres bajo SIL Open Font License 1.1: https://openfontlicense.org

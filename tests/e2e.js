@@ -27,7 +27,8 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
 (async () => {
   await new Promise(r => srv.listen(0, r)); const base = 'http://127.0.0.1:' + srv.address().port + '/';
   const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:1200, height:900}, serviceWorkers:'block'}); const page = await ctx.newPage();
-  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const errs = [], csp = []; page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.text().startsWith('CSPV ')) csp.push(m.text()); });
+  await page.addInitScript(() => { document.addEventListener('securitypolicyviolation', v => console.log('CSPV ' + v.violatedDirective + ' ' + v.blockedURI)); });
   await page.route('**/*', r => { const u = r.request().url(); if (u.endsWith('vendor/supabase.js')) return r.fulfill({status:200, contentType:'text/javascript', body:stub}); if (u.startsWith(base)) return r.continue(); return r.fulfill({status:200, contentType:'text/css', body:''}); });
   await page.goto(base); await page.waitForSelector('#gate:not([hidden])');
   ok(await page.locator('#g-mail').isVisible(), 'sin sesión aparece la pantalla de entrada');
@@ -36,6 +37,19 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.fill('#g-pass', 'admin123'); await page.click('#g-go'); await page.waitForSelector('#gate', {state:'hidden'}); await page.waitForTimeout(800);
   ok((await page.textContent('#nav')).includes('Ajustes'), 'el administrador ve Ajustes');
   ok((await page.textContent('#status')).length > 0 && await page.locator('#view').isVisible(), 'la app carga los datos');
+
+  // documentos legales, atajo de teclado y foco dentro de los cuadros
+  await page.goto(base + '#caja'); await page.waitForTimeout(500);
+  await page.click('footer [data-act="legal"]');
+  for (const [k, t] of [['priv', 'Ley 172-13'], ['cook', 'no usa cookies'], ['term', 'no sustituye un comprobante fiscal'], ['refu', 'anulación']]) {
+    await page.click('#modal [data-k="' + k + '"]'); ok((await page.textContent('#modal')).includes(t), 'documento legal "' + k + '" se abre y dice: ' + t);
+    await page.click('#modal [data-act="legal"]');
+  }
+  let trap = true; for (let i = 0; i < 12; i++) { await page.keyboard.press('Tab'); trap = trap && await page.evaluate(() => !!document.activeElement.closest('#modal')); }
+  ok(trap, 'con Tab el foco no se sale del cuadro abierto');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => document.querySelector('#modal').hidden), 'Esc cierra el cuadro');
+  ok(await page.evaluate(() => !!document.querySelector('.skip') && document.querySelector('#pgh').textContent.length > 0 && document.documentElement.lang === 'es'), 'hay enlace para saltar al contenido, título de página e idioma');
 
   // PIN y código de cajera (funciones del servidor)
   await page.goto(base + '#ajustes'); await page.waitForTimeout(600);
@@ -145,6 +159,7 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.locator('#outbtn').click(); await page.waitForSelector('#g-mail', {timeout:5000});
   ok(await page.locator('#apin').count() === 0, 'la cuenta de caja cierra sesión sin pedir el PIN');
   ok(await page.locator('.gate .glogo').count() === 1 && await page.locator('.gate .glogo').evaluate(i => i.complete && i.naturalWidth > 0), 'el logo aparece en la pantalla de entrada');
+  ok(csp.length === 0, 'la política de seguridad de contenido (CSP) no bloquea nada' + (csp.length ? ': ' + [...new Set(csp)].join(' | ') : ''));
   ok(errs.length === 0, 'sin errores de JavaScript' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await b.close(); srv.close();
 })().catch(e => { console.error('FALLO', e); process.exit(1); });
