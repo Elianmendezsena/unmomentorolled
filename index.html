@@ -14,7 +14,6 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
-<script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/supabase.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
@@ -58,6 +57,9 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.prow:first-of-type{border-top:0}.prow div{display:grid;gap:2px}
+.omenu{position:absolute;right:0;top:100%;z-index:5;background:var(--card,#fff);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.18);padding:6px;display:grid;min-width:210px}.omenu button{text-align:left;padding:10px 12px;border-radius:8px;background:none;border:0;font:inherit;color:inherit;cursor:pointer}.omenu button:hover{background:var(--soft,rgba(128,128,128,.14))}.ord-h{position:relative}
+.kbd{display:inline-block;padding:1px 7px;border:1px solid var(--line);border-radius:6px;font:600 12px ui-monospace,monospace;background:var(--soft,rgba(128,128,128,.12))}
 .foot{padding-top:4px;padding-bottom:90px;text-align:center;font-size:13px}
 .foot .lnk,.gate .lnk{color:var(--muted)}
 .pol h3{margin:16px 0 4px;font-size:16px}.pol p{margin:0;color:var(--muted);line-height:1.5}
@@ -135,7 +137,7 @@ body[data-tab="caja"] .page{padding-bottom:118px}
 .chip{min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);font-weight:600;white-space:nowrap;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cat-head{font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:20px 0 8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
 .cat-helados{--hue:var(--h-helados)}.cat-frio{--hue:var(--h-frio)}.cat-paletas{--hue:var(--h-paletas)}
 .cat-palomitas{--hue:var(--h-palomitas)}.cat-algodon{--hue:var(--h-algodon)}.cat-extras{--hue:var(--h-extras)}
 .tile{position:relative;min-height:98px;padding:12px;text-align:left;border-radius:var(--r);cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:8px;
@@ -505,7 +507,6 @@ h2{letter-spacing:-.015em}
     <div class="tools">
       <span class="st" id="status" data-s="wait">Conectando…</span>
       <button class="btn sm" id="whobtn" style="display:none"></button>
-      <button class="btn sm" id="themebtn" data-act="theme" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro"></button>
       <button class="btn sm" id="outbtn" data-act="acctout" title="Cerrar la sesión de este equipo">Cerrar sesión</button>
       <label class="cash"><span>Cobra</span><select id="cashier" aria-label="Quién cobra"></select></label>
     </div>
@@ -514,7 +515,7 @@ h2{letter-spacing:-.015em}
 </header>
 <div id="banner"></div>
 <main class="wrap page" id="view"></main>
-<footer class="wrap foot"><button class="lnk" data-act="policy">Políticas de uso</button></footer>
+<footer class="wrap foot"><button class="lnk" data-act="help">Cómo se hace</button> · <button class="lnk" data-act="policy">Políticas de uso</button> · <button class="lnk" id="themebtn" data-act="theme" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro"></button></footer>
 <div class="bar" id="bar" hidden></div>
 <div id="modal" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -540,6 +541,8 @@ const cashOf = x => r2(partsOf(x).filter(p => p.m === 'cash').reduce((a, p) => a
 const methodTxt = x => x.pays && x.pays.length > 1 ? 'Mixto (' + x.pays.map(p => METHODS[p.m] || p.m).join(' + ') + ')' : (METHODS[x.method] || x.method);
 const TABS = [['inicio','Inicio'],['caja','Caja'],['ventas','Ventas'],['inventario','Inventario'],['compras','Compras y merma'],['reportes','Reportes'],['cierre','Apertura y cierre'],['productos','Productos'],['ajustes','Ajustes']];
 const ADMIN_TABS = ['ajustes', 'productos', 'reportes'];
+const FEATS = [['compras', 'Compras y merma', 'Registrar lo que compras y lo que se daña o se pierde.'], ['held', 'Pedidos en espera', 'Dejar un pedido a medias para atender a otro cliente.']];
+const feat = id => !(Array.isArray(S.shop.off) ? S.shop.off : ['compras']).includes(id);
 const VOID_REASONS = ['Error al cobrar', 'El cliente se arrepintió', 'Producto en mal estado', 'Cobro duplicado', 'Otro'];
 const WASTE_REASONS = ['Se derritió', 'Se dañó o se cayó', 'Vencido', 'Regalo o cortesía', 'Consumo del personal', 'Otro'];
 const catIdx = id => { const i = CATS.findIndex(c => c.id === id); return i < 0 ? 99 : i; };
@@ -656,7 +659,7 @@ function openWA(text){
 function alertsStrip(){
   if (!alertsReady()) return '';
   const a = alerts(); if (!a.length) return '';
-  return `<div class="alerts"><b>Por agotarse</b>${a.slice(0, 8).map(x => `<span class="pill ${x.out ? 'out' : 'low'}">${esc(x.name)}: ${x.out ? 'agotado' : x.txt}</span>`).join('')}${a.length > 8 ? `<span class="muted sm">y ${a.length - 8} más</span>` : ''}<a href="#inventario">Ver inventario</a><button class="btn sm" data-act="restockwa">Enviar lista por WhatsApp</button></div>`;
+  return `<div class="alerts"><b>Por agotarse</b>${a.slice(0, 8).map(x => `<span class="pill ${x.out ? 'out' : 'low'}">${esc(x.name)}: ${x.out ? 'agotado' : x.txt}</span>`).join('')}${a.length > 8 ? `<span class="muted sm">y ${a.length - 8} más</span>` : ''}<a href="#inventario">Ver inventario</a></div>`;
 }
 const logoBwSrc = () => /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(S.shop.logoBw || '') ? S.shop.logoBw : '';
 function ticketQR(){
@@ -668,7 +671,7 @@ function ticketQR(){
     const q = window.qrcode(0, 'M'); q.addData(u); q.make(); return q.createDataURL(6, 2);
   } catch { return ''; }
 }
-const ticketLogo = () => S.shop.logoMode === 'bw' ? (logoBwSrc() || logoSrc()) : logoSrc();
+const ticketLogo = () => logoBwSrc() || logoSrc();
 const logoSrc = () => /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(S.shop.logo || '') ? S.shop.logo : '';
 
 function calcTot(cart, disc){
@@ -759,7 +762,7 @@ function paintHeader(){
   paintTheme();
   $('#brand').textContent = S.shop.name || 'Heladería';
   const nAl = alertsReady() ? alerts().length : 0;
-  $('#nav').innerHTML = TABS.filter(([id]) => !ADMIN_TABS.includes(id) || S.isAdmin)
+  $('#nav').innerHTML = TABS.filter(([id]) => (!ADMIN_TABS.includes(id) || S.isAdmin) && (id !== 'compras' || feat('compras')))
     .map(([id, n]) => `<a href="#${id}"${S.tab === id ? ' aria-current="page"' : ''}>${n}${id === 'inventario' && nAl ? `<span class="bdg" title="Por agotarse">${nAl}</span>` : ''}</a>`).join('');
   const ico = $('#brandico'), lg = logoSrc();
   if ((ico.dataset.l || '') !== lg) { ico.dataset.l = lg; ico.innerHTML = lg ? `<img src="${lg}" alt="" style="height:50px;max-width:150px;object-fit:contain;border-radius:8px;background:#fff;padding:2px 6px">` : DEFAULT_ICO; }
@@ -840,25 +843,29 @@ function viewInicio(){
   let state = '';
   if (dd.closed) state = `<div class="obox"><b>La caja de hoy está cerrada${dd.closedBy ? ' por ' + esc(dd.closedBy) : ''}.</b><span class="muted">Puede reabrirla quien esté autorizado, con su código, en Apertura y cierre.</span><a class="btn" href="#cierre">Ir a Apertura y cierre</a></div>`;
   else if (!isOpen(dd)) state = `<div class="obox"><b>La caja de hoy todavía no está abierta.</b><span class="muted">Cuenta el efectivo con el que empiezas y regístralo para poder cobrar.</span><a class="btn pri" href="#cierre">Abrir caja</a></div>`;
+  const rows = [];
+  const prow = (t, sub, btn) => `<div class="prow"><div><b>${t}</b>${sub ? `<span class="muted sm">${sub}</span>` : ''}</div>${btn}</div>`;
+  if (n) rows.push(prow('Pedido sin cobrar', `${n} producto${n === 1 ? '' : 's'} · ${money(T.total)}`, '<a class="btn pay sm" href="#caja">Continuar</a>'));
+  if (S.held.length && feat('held')) rows.push(prow(`${S.held.length} pedido${S.held.length === 1 ? '' : 's'} en espera`, 'En este equipo', '<a class="btn sm" href="#caja">Ir a la Caja</a>'));
   if (S.isAdmin && S.loaded.shop) {
     const lb = +S.shop.lastBackup || 0, age = lb ? (Date.now() - lb) / 864e5 : 99;
-    if (age > 7) state += `<div class="obox"><b>${lb ? 'Hace ' + Math.floor(age) + ' días que no descargas un respaldo.' : 'Aún no has descargado ningún respaldo.'}</b><span class="muted">Es una copia de todos los datos del negocio. Tarda unos segundos.</span><button class="btn pri" data-act="backup">Descargar respaldo</button></div>`;
+    if (age > 7) rows.push(prow(lb ? 'Hace ' + Math.floor(age) + ' días sin respaldo' : 'Aún no hay respaldo', 'Copia de todos los datos del negocio', '<button class="btn pri sm" data-act="backup">Descargar</button>'));
+    if (new Date().getDay() === 1 && store.get('wkseen', '') !== dayKey()) rows.push(prow('Es lunes: mira la semana', 'Ventas, lo más vendido y cuadres', '<button class="btn pri sm" data-act="wkgo">Ver resumen</button>'));
   }
-  if (S.isAdmin && new Date().getDay() === 1 && store.get('wkseen', '') !== dayKey()) state += `<div class="obox"><b>Es lunes: mira cómo te fue en la semana.</b><span class="muted">Ventas, lo más vendido, lo que no se mueve y los cuadres.</span><button class="btn pri" data-act="wkgo">Ver resumen</button></div>`;
-  const pend = n ? `<div class="obox"><b>Tienes un pedido sin cobrar:</b><span>${n} producto${n === 1 ? '' : 's'} · ${money(T.total)}</span><a class="btn pay" href="#caja">Continuar el pedido</a></div>` : '';
-  const heldN = S.held.length ? `<div class="obox"><b>${S.held.length} pedido${S.held.length === 1 ? '' : 's'} en espera en este equipo.</b><a class="btn" href="#caja">Ir a la Caja</a></div>` : '';
+  const pend = rows.length ? `<div class="card pendc"><h3>Pendientes</h3>${rows.join('')}</div>` : '';
+  const heldN = '';
   const al = alertsReady() ? alerts() : null;
-  const alertsCard = al === null ? '' : `<div class="card"><h3>Por agotarse</h3>${al.length ? `<div style="display:grid;gap:8px">${al.slice(0, 10).map(x => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b>${esc(x.name)}</b><span class="pill ${x.out ? 'out' : 'low'}">${x.out ? 'Agotado' : x.txt}</span></div>`).join('')}${al.length > 10 ? `<span class="muted sm">y ${al.length - 10} más</span>` : ''}</div><a class="btn" href="#inventario" style="margin-top:12px">Ver inventario</a>` : '<p class="muted">Todo en orden: nada está por agotarse.</p>'}</div>`;
+  const alertsCard = al === null ? '' : `<div class="card"><h3>Por agotarse</h3>${al.length ? `<div style="display:grid;gap:8px">${al.slice(0, 10).map(x => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b>${esc(x.name)}</b><span class="pill ${x.out ? 'out' : 'low'}">${x.out ? 'Agotado' : x.txt}</span></div>`).join('')}${al.length > 10 ? `<span class="muted sm">y ${al.length - 10} más</span>` : ''}</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><a class="btn" href="#inventario">Ver inventario</a><button class="btn" data-act="wamenu">Enviar por WhatsApp</button></div>` : '<p class="muted">Todo en orden: nada está por agotarse.</p>'}</div>`;
   const last = S.sales.filter(x => x.day === day).slice(0, 5);
   const lrows = last.map(x => `<tr class="${x._void ? 'is-void' : ''}"><td class="num">${hhmm(x.ts)}</td><td><button class="lnk num" data-sale="${esc(x.id)}">${esc(x.code || x.id.slice(0, 6))}</button></td><td>${esc(x.cashier)}</td><td class="num">${money(x.total)}</td></tr>`).join('');
   const go = (href, ico, t, sub, main) => `<a class="go${main ? ' main' : ''}" href="${href}">${ICO[ico]}<span>${t}</span><small>${sub}</small></a>`;
   return `<div class="home"><div class="hello" style="margin-bottom:14px"><h2>${hi}${who ? ', ' + esc(who) : ''}</h2><p class="muted">${esc(S.shop.name || 'Heladería')} · ${dayLabel(day)}</p></div>
-    ${state}${pend}${heldN}
+    ${state}
     <div class="two"><div class="stack">
       <div class="sum"><div class="stat"><small>Vendido hoy</small><b data-cn="home-vend" data-v="${st.totalAll}">${money(st.totalAll)}</b></div><div class="stat"><small>Tickets</small><b>${st.okAll.length}</b></div><div class="stat"><small>Efectivo</small><b>${money(st.mAll.cash)}</b></div><div class="stat"><small>Tarjeta</small><b>${money(st.mAll.card)}</b></div><div class="stat"><small>Transferencia</small><b>${money(st.mAll.transfer)}</b></div></div>
-      <div class="go-grid">${go('#caja', 'cart', 'Cobrar', 'Abrir la caja registradora', true)}${go('#ventas', 'list', 'Ventas de hoy', 'Tickets y anulaciones')}${go('#compras', 'bag', 'Compras y merma', 'Registrar lo que entra o se pierde')}${go('#inventario', 'box', 'Inventario', al && al.length ? al.length + ' por agotarse' : 'Existencias')}${go('#cierre', 'lock', 'Apertura y cierre', 'Cuadre de la caja')}${S.isAdmin ? go('#reportes', 'chart', 'Reportes', 'Día, semana y mes') : ''}</div>
+      <div class="go-grid">${go('#caja', 'cart', 'Cobrar', 'Abrir la caja registradora', true)}${go('#ventas', 'list', 'Ventas de hoy', 'Tickets y anulaciones')}${feat('compras') ? go('#compras', 'bag', 'Compras y merma', 'Registrar lo que entra o se pierde') : ''}${go('#inventario', 'box', 'Inventario', al && al.length ? al.length + ' por agotarse' : 'Existencias')}${go('#cierre', 'lock', 'Apertura y cierre', 'Cuadre de la caja')}${S.isAdmin ? go('#reportes', 'chart', 'Reportes', 'Día, semana y mes') : ''}</div>
       <div class="card"><h3>Últimas ventas</h3>${last.length ? `<div class="scroll" style="border:0"><table class="tbl"><thead><tr><th>Hora</th><th>Ticket</th><th>Cajero</th><th class="num">Total</th></tr></thead><tbody>${lrows}</tbody></table></div>` : `<div class="empty-sm">${ICO.cone}Todavía no hay ventas hoy.</div>`}</div>
-    </div><div class="stack">${alertsCard}</div></div><p class="muted sm" style="margin-top:18px;text-align:center">Sesión: ${esc((S.acct && S.acct.name) || '')} · <button class="lnk" data-act="acctout">Cerrar sesión de este equipo</button></p></div>`;
+    </div><div class="stack">${pend}${alertsCard}</div></div><p class="muted sm" style="margin-top:18px;text-align:center">Sesión: ${esc((S.acct && S.acct.name) || '')} · <button class="lnk" data-act="acctout">Cerrar sesión de este equipo</button></p></div>`;
 }
 
 /* ───────── Vista: Caja ───────── */
@@ -873,7 +880,7 @@ function tile(p){
   return `<button class="tile cat-${esc(p.cat)}" data-add="${esc(p.id)}">${q ? `<span class="qty">${q}</span>` : ''}<span class="nm">${esc(p.name)}</span><span class="pr">${money0(p.price)}</span>${note}</button>`;
 }
 function discRow(){
-  if (!S.discAuth && !(S.disc.v > 0)) return '<div class="disc"><label>Descuento</label><button class="btn sm" data-act="discask">Aplicar descuento…</button></div>';
+  if (!S.discAuth && !(S.disc.v > 0)) return '';
   return `<div class="disc"><label for="disc">Descuento autorizado</label>
     <input id="disc" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${S.disc.v ? esc(S.disc.v) : ''}">
     <span class="seg" role="group" aria-label="Tipo de descuento"><button data-dt="amt" aria-pressed="${S.disc.t === 'amt'}">RD$</button><button data-dt="pct" aria-pressed="${S.disc.t === 'pct'}">%</button></span>
@@ -885,10 +892,10 @@ function orderHTML(){
     <div class="step"><button data-dec="${esc(k)}" aria-label="Quitar uno de ${esc(l.name)}">−</button><button class="qbtn" data-qty="${esc(k)}" aria-label="Cambiar la cantidad de ${esc(l.name)}">${l.qty}</button><button data-inc="${esc(k)}" aria-label="Agregar uno de ${esc(l.name)}">+</button></div>
     <div class="amt">${money(l.price * l.qty)}</div></div>`; }).join('')
     : `<div class="empty-sm">${ICO.cone}Toca un producto para empezar el pedido.</div>`;
-  const heldBar = S.held.length ? `<div class="held"><span class="lbl-s">En espera</span>${S.held.map(h => {
+  const heldBar = S.held.length && feat('held') ? `<div class="held"><span class="lbl-s">En espera</span>${S.held.map(h => {
     const n = h.cart.reduce((a, l) => a + l.qty, 0), tt = calcTot(h.cart, h.disc || {v:0, t:'amt'}).total, f = h.cart[0] ? h.cart[0].name : 'Pedido';
     return `<span class="hchip"><button data-hres="${esc(h.id)}" title="Retomar este pedido">${esc(f.slice(0, 16))}${n > 1 ? ' +' + (n - 1) : ''} · ${money0(tt)}</button><button class="x" data-hdel="${esc(h.id)}" aria-label="Descartar este pedido en espera">${S.hdel === h.id ? '¿Seguro?' : '×'}</button></span>`; }).join('')}</div>` : '';
-  return `<div class="ord-h"><h2>Pedido actual</h2>${S.cart.length ? '<span class="acts"><button class="lnk" data-act="hold">Poner en espera</button><button class="lnk" data-act="clear">Vaciar</button></span>' : ''}</div>${heldBar}
+  return `<div class="ord-h"><h2>Pedido actual</h2>${S.cart.length ? `<span class="acts"><button class="lnk" data-act="omenu" aria-haspopup="true" aria-expanded="${!!S.omenu}">Más ▾</button></span>${S.omenu ? `<div class="omenu" role="menu">${!S.discAuth && !(S.disc.v > 0) ? '<button data-act="discask" role="menuitem">Aplicar descuento…</button>' : ''}${feat('held') ? '<button data-act="hold" role="menuitem">Poner en espera</button>' : ''}<button data-act="clear" role="menuitem">Vaciar el pedido</button></div>` : ''}` : ''}</div>${heldBar}
     <div class="lines">${lines}</div>
     <div class="tot">
       <div class="row"><span class="muted">Subtotal</span><b class="num" id="t-sub" data-cn="t-sub" data-v="${T.sub}">${money(T.sub)}</b></div>
@@ -909,11 +916,6 @@ function searchHits(){
   const q = norm(S.q).trim(); if (!q) return [];
   return activeProducts().filter(p => norm(p.name).includes(q) || norm(catName(p.cat)).includes(q));
 }
-function topSold(prods){
-  const ids = new Set(prods.map(p => p.id)), agg = {};
-  S.sales.forEach(x => { if (x._void) return; (x.items || []).forEach(i => { if (ids.has(i.id)) agg[i.id] = (agg[i.id] || 0) + (+i.qty || 0); }); });
-  return Object.entries(agg).sort((x, y) => y[1] - x[1]).slice(0, 6).map(([id]) => prods.find(p => p.id === id));
-}
 function popMap(){
   if (S.shop.popSort === 'off' || !S.loaded.sales) return null;
   if (!S._pop) {                                   // se calcula una vez por sesión, para que los productos no cambien de lugar mientras se cobra
@@ -931,9 +933,7 @@ function prodsHTML(){
   }
   const cats = CATS.filter(c => prods.some(p => p.cat === c.id));
   const shown = S.cat === 'todos' ? cats : cats.filter(c => c.id === S.cat);
-  const fav = S.cat === 'todos' && S.loaded.sales ? topSold(prods) : [];
-  const favH = fav.length >= 3 ? `<h2 class="cat-head">Los más pedidos</h2><div class="grid">${fav.map(tile).join('')}</div>` : '';
-  return favH + shown.map(c => `<h2 class="cat-head">${esc(c.name)}</h2><div class="grid">${popSorted(prods.filter(p => p.cat === c.id)).map(tile).join('')}</div>`).join('');
+  return shown.map(c => `<h2 class="cat-head">${esc(c.name)}</h2><div class="grid">${popSorted(prods.filter(p => p.cat === c.id)).map(tile).join('')}</div>`).join('');
 }
 function viewCaja(){
   if (!S.loaded.products) return loading('Cargando productos…', 'grid');
@@ -1211,10 +1211,10 @@ function openSale(s, fresh){
   openModal(`${fresh ? `<div class="okmark"><svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="24"/><path d="M17 29l8 8 14-16"/></svg><div><h2 id="mt">Venta registrada</h2><p class="muted sm">${money(s.total)} · ${esc(methodTxt(s))}</p></div></div>` : `<h2 id="mt">Ticket ${esc(s.code || '')}</h2>`}
     ${fresh && s.received != null ? `<div class="chg-big"><small>Cambio a devolver</small><b>${money(s.change)}</b></div>` : ''}
     <pre class="ticket">${ticketLogo() ? `<img class="tlogo" src="${ticketLogo()}" alt="">` : ''}${esc(ticketText(s))}</pre>
-    ${fresh ? '<p class="muted sm">Para imprimir: pulsa «Ticket con logo (imprimir)» y se abre la ventana de impresión (elige la impresora térmica).</p>' : ''}
+    ${fresh ? '<p class="muted sm">Para imprimir: pulsa «Imprimir ticket» y elige la impresora térmica.</p>' : ''}
     ${extra}
     ${fresh && S.dl ? `<label class="muted sm" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" data-autoprint${store.get('autoprint', false) ? ' checked' : ''} style="width:18px;height:18px"> Imprimir el ticket solo al cobrar (en este equipo)</label>` : ''}
-    <div class="dlg-act">${S.dl ? '<button class="btn" data-act="tdlh">Ticket con logo (imprimir)</button><button class="btn" data-act="tdl">.txt</button>' : ''}<button class="btn" data-act="tcopy">Copiar</button><button class="btn pri" data-act="mclose">${fresh ? 'Nueva venta' : 'Cerrar'}</button></div>`);
+    <div class="dlg-act">${S.dl ? '<button class="btn" data-act="tdlh">Imprimir ticket</button>' : ''}<button class="btn" data-act="tcopy">Copiar</button><button class="btn pri" data-act="mclose">${fresh ? 'Nueva venta' : 'Cerrar'}</button></div>`);
 }
 
 /* ───────── Vista: Ventas ───────── */
@@ -1480,7 +1480,7 @@ function viewReportes(){
   ensureReport();
   const [a, b] = rangeDates();
   const seg = [['hoy', 'Hoy'], ['7d', '7 días'], ['mes', 'Este mes'], ['mespas', 'Mes pasado'], ['otro', 'Fechas']].map(([k, n]) => `<button data-rk="${k}" aria-pressed="${S.rk === k}">${n}</button>`).join('');
-  const head = `<div class="vh"><h2>Reportes</h2><button class="btn sm" data-act="rfresh">Actualizar</button>${S.dl ? '<button class="btn pri sm" data-act="xlsx">Descargar Excel</button>' : ''}<button class="btn sm" data-act="wkwa">Resumen por WhatsApp</button></div>
+  const head = `<div class="vh"><h2>Reportes</h2><button class="btn sm" data-act="rfresh">Actualizar</button>${S.dl ? '<button class="btn pri sm" data-act="xlsx">Descargar Excel</button>' : ''}<button class="btn sm" data-act="wamenu">Enviar por WhatsApp</button></div>
     <div class="rng"><span class="seg" role="group" aria-label="Período">${seg}</span>
       ${S.rk === 'otro' ? `<div class="fld"><label for="rfrom">Desde</label><input id="rfrom" type="date" value="${a}"></div><div class="fld"><label for="rto">Hasta</label><input id="rto" type="date" value="${b}"></div>` : ''}
       <span class="muted sm">${a === b ? dayLabel(a) : dayLabel(a) + ' al ' + dayLabel(b)}</span></div>`;
@@ -1737,7 +1737,7 @@ function viewCierre(){
         <div class="diff ${cls}" style="margin-top:12px">${t}</div>
         ${dd.note ? `<p class="muted" style="margin-top:10px">Nota: ${esc(dd.note)}</p>` : ''}
         ${after ? `<p style="margin-top:10px"><span class="pill low">${after} venta${after > 1 ? 's' : ''} después del cierre</span></p>` : ''}
-        <p style="margin-top:12px"><button class="btn" data-act="wa">Enviar resumen por WhatsApp</button></p>
+        <p style="margin-top:12px"><button class="btn" data-act="wamenu">Enviar por WhatsApp</button></p>
         ${reopenHTML(isToday, counted)}</div>`;
   } else if (!opened) {
     cierre = '<div class="card"><h3>3. Cierre de caja</h3><p class="muted">Primero abre la caja. El cierre se hace al terminar el día.</p></div>';
@@ -1891,11 +1891,11 @@ function ajustesHTML(){
       <div class="rowf"><div class="fld"><label for="shopaddr">Dirección (opcional)</label><input id="shopaddr" data-sf="address" maxlength="40" value="${esc(S.shop.address || '')}"></div>
       <div class="fld"><label for="shopphone">Teléfono (opcional)</label><input id="shopphone" data-sf="phone" maxlength="20" value="${esc(S.shop.phone || '')}"></div></div>
       <div class="fld" style="max-width:420px"><label for="shopwa">WhatsApp para el resumen del cierre (opcional)</label><input id="shopwa" data-sf="waPhone" inputmode="tel" maxlength="20" placeholder="Con código de país, ej. 18095551234" value="${esc(S.shop.waPhone || '')}"></div>
-      <div class="fld"><span class="lbl">Logo (sale arriba en la pantalla y en el ticket con logo)</span><div class="logo-prev">${logoSrc() ? `<figure style="margin:0;text-align:center"><img src="${logoSrc()}" alt="Logo" style="background:#fff"><figcaption class="muted sm">En pantalla</figcaption></figure><figure style="margin:0;text-align:center"><img src="${ticketLogo()}" alt="Logo del ticket"><figcaption class="muted sm">En el ticket</figcaption></figure>` : '<span class="muted">Sin logo</span>'}
-        <label class="btn" style="display:inline-flex;align-items:center;cursor:pointer">Elegir imagen<input id="logofile" type="file" accept="image/*" hidden></label>${logoSrc() ? '<button class="btn" data-act="logodel">Quitar</button>' : ''}</div></div>
-      ${logoSrc() ? `<div class="fld" style="max-width:340px"><label for="logomode">Logo en el ticket</label><select id="logomode" data-sf="logoMode"><option value="color"${S.shop.logoMode === 'bw' ? '' : ' selected'}>A color, tal como es</option><option value="bw"${S.shop.logoMode === 'bw' ? ' selected' : ''}>Blanco y negro (para térmica)</option></select></div>` : ''}</section>
+      <div class="fld"><span class="lbl">Logo (sale arriba en la pantalla y en el ticket, en blanco y negro)</span><div class="logo-prev">${logoSrc() ? `<figure style="margin:0;text-align:center"><img src="${logoSrc()}" alt="Logo" style="background:#fff"><figcaption class="muted sm">En pantalla</figcaption></figure><figure style="margin:0;text-align:center"><img src="${ticketLogo()}" alt="Logo del ticket"><figcaption class="muted sm">En el ticket</figcaption></figure>` : '<span class="muted">Sin logo</span>'}
+        <label class="btn" style="display:inline-flex;align-items:center;cursor:pointer">Elegir imagen<input id="logofile" type="file" accept="image/*" hidden></label>${logoSrc() ? '<button class="btn" data-act="logodel">Quitar</button>' : ''}</div></div></section>
     <section class="sec"><h2>Cajeros</h2><div style="display:flex;flex-wrap:wrap;gap:8px">${chips || '<span class="muted">Aún no hay cajeros.</span>'}</div>
       <div class="rowf"><div class="fld"><label for="newc">Agregar cajero</label><input id="newc" maxlength="24" autocomplete="off"></div><button class="btn" data-act="addc">Agregar</button></div>${openersBlock()}</section>
+    ${featsBlock()}
     ${backupBlock()}
     ${codesBlock()}
     ${pinSection()}`;
@@ -1919,10 +1919,21 @@ function closeSummary(day){
   }
   return lines.join('\n');
 }
+function featsBlock(){
+  return `<section class="sec"><h2>Funciones</h2><p class="muted">Apaga lo que no usen para que la pantalla quede más limpia. No se borra nada: lo guardado sigue en los reportes.</p>
+    <div style="display:grid;gap:10px">${FEATS.map(([id, n, d]) => `<label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" data-feat="${id}" style="width:20px;height:20px;margin-top:2px"${feat(id) ? ' checked' : ''}><span><b>${n}</b><br><span class="muted sm">${d}</span></span></label>`).join('')}</div></section>`;
+}
+/* La librería de Excel pesa unos 900 KB: solo se descarga cuando alguien exporta. */
+let xlsxP = null;
+function loadXLSX(){
+  if (window.XLSX) return Promise.resolve(true);
+  if (!xlsxP) xlsxP = new Promise(res => { const sc = document.createElement('script'); sc.src = 'vendor/xlsx.full.min.js'; sc.onload = () => res(!!window.XLSX); sc.onerror = () => { xlsxP = null; res(false); }; document.head.appendChild(sc); });
+  return xlsxP;
+}
 function backupBlock(){
   const lb = +S.shop.lastBackup || 0;
   return `<section class="sec"><h2>Respaldo de los datos</h2><p class="muted">Descarga una copia de todo: ventas, productos, inventario, cierres y ajustes. Guárdala en tu correo o en una memoria USB. ${lb ? 'Último respaldo: <b>' + esc(new Date(lb).toLocaleString('es-DO')) + '</b>.' : '<b>Todavía no has descargado ninguno.</b>'} Se recomienda una vez por semana.</p>
-    <div class="rowf"><button class="btn pri" data-act="backup">Descargar respaldo completo</button><button class="btn" data-act="backupx">Descargar en Excel</button></div></section>`;
+    <div class="rowf"><button class="btn pri" data-act="backup">Descargar respaldo completo</button></div></section>`;
 }
 async function fetchAllDocs(){
   const out = [], PAGE = 1000;
@@ -1933,22 +1944,12 @@ async function fetchAllDocs(){
   }
   return out;
 }
-async function doBackup(kind){
+async function doBackup(){
   if (!S.dl) return;
   toast('Preparando el respaldo…');
   try {
     const rows = await fetchAllDocs(), stamp = dayKey();
-    if (kind === 'xlsx') {
-      if (!window.XLSX) { toast('No se pudo cargar Excel. Usa el respaldo completo.'); return; }
-      const wb = XLSX.utils.book_new(), by = {};
-      rows.forEach(r => { (by[r.col] = by[r.col] || []).push(r); });
-      Object.keys(by).sort().forEach(col => {
-        const keys = [...new Set(by[col].flatMap(r => Object.keys(r.data || {})))];
-        const aoa = [['id', ...keys], ...by[col].map(r => [r.id, ...keys.map(k => { const v = (r.data || {})[k]; return v !== null && typeof v === 'object' ? JSON.stringify(v) : v === undefined ? '' : v; })])];
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), col.slice(0, 31));
-      });
-      await S.dl.save({filename:'respaldo-un-momento-rolled-' + stamp + '.xlsx', data:new Uint8Array(XLSX.write(wb, {bookType:'xlsx', type:'array'}))});
-    } else {
+    {
       await S.dl.save({filename:'respaldo-un-momento-rolled-' + stamp + '.json', data:JSON.stringify({app:'Un Momento Rolled', version:1, at:new Date().toISOString(), count:rows.length, docs:rows})});
     }
     await S.db.doc('settings/shop').update({lastBackup:Date.now()}).catch(() => {});
@@ -2136,6 +2137,17 @@ const A = {
     go();
   },
   dropfailed(){ S.db.dropFailed(); },
+  help(){
+    openModal(`<h2 id="mt">Cómo se hace</h2><div class="pol">
+      <h3>Abrir la caja</h3><p>Apertura y cierre → cuenta el efectivo con el que empiezas → escribe el monto y tu código → Abrir caja.</p>
+      <h3>Cobrar</h3><p>Toca los productos (si piden sabores, elígelos) → Cobrar → forma de pago → Confirmar. Si es efectivo, escribe cuánto te dan y la app calcula el cambio.</p>
+      <h3>Anular una venta</h3><p>Ventas → toca el ticket → Anular venta. Hace falta el código del administrador y el motivo.</p>
+      <h3>Descuento o pedido en espera</h3><p>En el pedido, toca <b>Más</b>. El descuento pide el código del administrador.</p>
+      <h3>Cerrar la caja</h3><p>Apertura y cierre → cuenta todo el efectivo → escribe lo contado y tu código → Cerrar. Luego puedes enviar el resumen por WhatsApp.</p>
+      <h3>Si se va el internet</h3><p>Sigue cobrando con normalidad. Arriba verás cuántas ventas faltan por enviar; salen solas cuando vuelva.</p>
+      <h3>Atajos del teclado (computador)</h3><p><span class="kbd">/</span> buscar producto · <span class="kbd">F2</span> cobrar · <span class="kbd">F4</span> vaciar el pedido · <span class="kbd">Esc</span> cerrar una ventana</p></div>
+      <div class="dlg-act"><button class="btn pri" data-act="mclose">Entendido</button></div>`);
+  },
   theme(){
     const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const nx = cur === 'dark' ? 'light' : 'dark';
@@ -2197,7 +2209,9 @@ const A = {
     if (inp) { inp.value = String(total); inp.dispatchEvent(new Event('input', {bubbles:true})); }
     toast('Total contado: ' + money(total));
   },
+  omenu(){ S.omenu = !S.omenu; paint(false); },
   hold(){
+    S.omenu = false;
     if (!S.cart.length) return;
     if (S.held.length >= 8) { toast('Ya hay 8 pedidos en espera. Cobra o descarta alguno.'); return; }
     S.held.push(heldFrom()); S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; S.discTok = ''; saveCart(); saveHeld(); paint();
@@ -2214,7 +2228,7 @@ const A = {
     if (S.hdel !== id) { S.hdel = id; paint(); setTimeout(() => { if (S.hdel === id) { S.hdel = null; render(); } }, 4000); return; }
     S.hdel = null; S.held = S.held.filter(x => x.id !== id); saveHeld(); paint(); toast('Pedido en espera descartado.');
   },
-  discask(){ askPin('Autorizar descuento', tok => { S.discAuth = true; S.discTok = tok; paint(); setTimeout(() => { const e = $('#disc'); if (e) e.focus(); }, 60); }, 'Un descuento necesita el código del administrador.', 'discount'); },
+  discask(){ S.omenu = false; askPin('Autorizar descuento', tok => { S.discAuth = true; S.discTok = tok; paint(); setTimeout(() => { const e = $('#disc'); if (e) e.focus(); }, 60); }, 'Un descuento necesita el código del administrador.', 'discount'); },
   discoff(){ S.discAuth = false; S.discTok = ''; S.disc = {v:0, t:'amt'}; paint(); },
   async authgo(){
     const a = S.auth; if (!a) return;
@@ -2264,7 +2278,7 @@ const A = {
     const R = S.repR; if (!R || S.rep.loading) { toast('Espera a que carguen los datos del reporte.'); return; }
     const sheets = reportSheets(R), name = 'reporte-heladeria-' + R.a + (R.a === R.b ? '' : '_a_' + R.b);
     try {
-      if (window.XLSX) {
+      if (await loadXLSX()) {
         const wb = XLSX.utils.book_new();
         sheets.forEach(([n, rows, w]) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = (w || []).map(x => ({wch:x})); XLSX.utils.book_append_sheet(wb, ws, n); });
         await S.dl.save({filename:name + '.xlsx', data:new Uint8Array(XLSX.write(wb, {bookType:'xlsx', type:'array'}))});
@@ -2274,12 +2288,19 @@ const A = {
       }
     } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo descargar el archivo.'); }
   },
-  wa(){ openWA(closeSummary(S.day)); },
-  restockwa(){ openWA(restockText()); },
-  wkwa(){ const R = S.repR; if (!R || S.rep.loading) { toast('Espera a que carguen los datos del reporte.'); return; } openWA(periodSummary(R)); },
+  wamenu(){
+    const al = alertsReady() ? alerts() : [], hasRep = S.isAdmin && S.repR && !S.rep.loading;
+    openModal(`<h2 id="mt">Enviar por WhatsApp</h2><p class="muted sm">Elige qué mandar. Se abre WhatsApp con el mensaje ya escrito${S.shop.waPhone ? '' : ' (puedes dejar fijo un número en Ajustes)'}.</p>
+      <div style="display:grid;gap:8px;margin-top:10px"><button class="btn" data-act="wa">Resumen del día (${esc(dayLabel(S.day))})</button>
+      <button class="btn" data-act="restockwa"${al.length ? '' : ' disabled'}>Lista de reposición${al.length ? ' (' + al.length + ')' : ' · nada por reponer'}</button>
+      ${S.isAdmin ? `<button class="btn" data-act="wkwa"${hasRep ? '' : ' disabled'}>Resumen del período de Reportes${hasRep ? '' : ' · abre antes Reportes'}</button>` : ''}</div>
+      <div class="dlg-act"><button class="btn" data-act="mclose">Cancelar</button></div>`);
+  },
+  wa(){ closeModal(); openWA(closeSummary(S.day)); },
+  restockwa(){ closeModal(); openWA(restockText()); },
+  wkwa(){ const R = S.repR; if (!R || S.rep.loading) { toast('Espera a que carguen los datos del reporte.'); return; } closeModal(); openWA(periodSummary(R)); },
   wkgo(){ store.set('wkseen', dayKey()); S.rk = '7d'; location.hash = '#reportes'; },
-  backup(){ doBackup('json'); },
-  backupx(){ doBackup('xlsx'); },
+  backup(){ doBackup(); },
   pcopen(){ S.sheet = false; S.pc = {supplier:'', paid:false, lines:[], ref:S.db.collection('purchases').doc()}; openModal(pcHTML()); },
   pcadd(){
     pcRead();
@@ -2346,13 +2367,12 @@ const A = {
     S.delW = null;
     if (await write(() => S.db.doc('waste/' + id).delete())) { toast('Registro quitado.'); paint(); }
   },
-  clear(){ S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; S.discTok = ''; saveCart(); paint(); },
+  clear(){ S.omenu = false; S.cart = []; S.disc = {v:0, t:'amt'}; S.discAuth = false; S.discTok = ''; saveCart(); paint(); },
   sheet(){ S.sheet = !S.sheet; paint(); },
   pay(){ openPay(); },
   mclose(){ closeModal(); },
   confirm(el){ confirmPay(el); },
   tcopy(){ if (S.sel) copyText(ticketText(S.sel.s)); },
-  async tdl(){ if (!S.sel || !S.dl) return; try { await S.dl.save({filename:'ticket-' + (S.sel.s.code || 'venta') + '.txt', data:ticketText(S.sel.s)}); } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo descargar el archivo.'); } },
   async csv(){ if (!S.dl) return; try { await S.dl.save({filename:'ventas-' + S.day + '.csv', data:csvDay()}); } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo descargar el archivo.'); } },
   voidask(){ S.voidAsk = true; openSale(S.sel.s, S.sel.fresh); },
   voidgo(){
@@ -2507,6 +2527,12 @@ document.addEventListener('change', async e => {
     await write(() => S.db.doc('flavors/' + id).update({[f]:v}));
     return;
   }
+  if (t.dataset.feat) {
+    const off = FEATS.map(f => f[0]).filter(id => id === t.dataset.feat ? !t.checked : !feat(id));
+    if (await saveShop({off})) toast(t.checked ? 'Función activada.' : 'Función apagada.');
+    if (t.dataset.feat === 'compras' && !t.checked && location.hash === '#compras') location.hash = '#inicio';
+    return;
+  }
   if (t.dataset.autoprint !== undefined) { store.set('autoprint', t.checked); if (t.checked) toast('Desde ahora el ticket se imprime solo al cobrar en este equipo.'); return; }
   if (t.dataset.fondo !== undefined) { await saveDay(S.day, {fondo:Math.max(0, parseFloat(t.value) || 0)}); return; }
   if (t.dataset.opener !== undefined) {
@@ -2528,6 +2554,14 @@ document.addEventListener('change', async e => {
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden && !S.pay) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (!S.db || S.tab !== 'caja' || !$('#modal').hidden || !$('#gate').hidden) return;
+  const tag = (e.target && e.target.tagName) || '', typing = /^(INPUT|TEXTAREA|SELECT)$/.test(tag);
+  if (e.key === 'F2') { e.preventDefault(); if (S.cart.length) A.pay(); }
+  else if (e.key === 'F4') { e.preventDefault(); if (S.cart.length) A.clear(); }
+  else if (e.key === '/' && !typing) { e.preventDefault(); const q = $('#q'); if (q) q.focus(); }
+});
+document.addEventListener('click', e => { if (S.omenu && !e.target.closest('.omenu, [data-act="omenu"], [data-act="discask"], [data-act="hold"], [data-act="clear"]')) { S.omenu = false; paint(false); } });
 document.addEventListener('keydown', e => {
   if (!S.qk || $('#modal').hidden) return;
   if (/^\d$/.test(e.key)) { kpPress(e.key); e.preventDefault(); }

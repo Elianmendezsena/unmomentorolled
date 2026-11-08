@@ -44,6 +44,12 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   ok(!(await page.evaluate(() => document.body.innerText + JSON.stringify(Object.keys(window).filter(k => /pin|hash|code/i.test(k))))).includes('1234'), 'el PIN no queda visible en la página');
   const cc = page.locator('[data-cc="0"]'); await cc.waitFor({timeout:3000}); await cc.fill('4321'); await page.click('[data-act="ccsave"][data-i="0"]'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => window.__f.state.codes.Ana === '4321'), 'el código de Ana queda en el servidor');
+  // funciones opcionales
+  ok(!(await page.textContent('#nav')).includes('Compras'), 'Compras y merma viene apagada');
+  await page.check('[data-feat="compras"]'); await page.waitForTimeout(600);
+  ok((await page.textContent('#nav')).includes('Compras'), 'se puede activar Compras y merma desde Ajustes');
+  await page.uncheck('[data-feat="compras"]'); await page.waitForTimeout(500);
+
   // respaldo completo (descarga de un archivo con todos los datos)
   const [dlf] = await Promise.all([page.waitForEvent('download', {timeout:8000}), page.click('[data-act="backup"]')]);
   const bk = JSON.parse(fs.readFileSync(await dlf.path(), 'utf8'));
@@ -55,11 +61,17 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.fill('#shopig', '@unmomentorolled'); await page.dispatchEvent('#shopig', 'change'); await page.waitForTimeout(500);
   ok(await page.evaluate(() => window.__f.get('settings', 'shop').instagram) === '@unmomentorolled', 'se guarda el Instagram del negocio');
   // resumen del período por WhatsApp
-  await page.goto(base + '#reportes'); await page.waitForSelector('[data-act="wkwa"]', {timeout:8000}); await page.click('[data-rk="7d"]'); await page.waitForTimeout(1200);
+  await page.goto(base + '#reportes'); await page.waitForSelector('[data-act="wamenu"]', {timeout:8000}); await page.click('[data-rk="7d"]'); await page.waitForTimeout(1200);
   await page.evaluate(() => { window.__wa = ''; window.open = u => { window.__wa = u; return null; }; });
-  await page.click('[data-act="wkwa"]'); await page.waitForTimeout(200);
+  await page.click('[data-act="wamenu"]'); await page.click('#modal [data-act="wkwa"]'); await page.waitForTimeout(200);
   const wk = decodeURIComponent(await page.evaluate(() => window.__wa));
   ok(/wa\.me/.test(wk) && wk.includes('Resumen del') && wk.includes('Vendido:') && wk.includes('Cuadres'), 'el resumen semanal se arma: ' + wk.slice(0, 120).replace(/\n/g, ' | '));
+  // Excel bajo demanda y ayuda
+  ok(await page.evaluate(() => !window.XLSX), 'la librería de Excel no se descarga al abrir');
+  await page.goto(base + '#reportes'); await page.waitForSelector('[data-act="xlsx"]'); await page.waitForTimeout(800);
+  const [xd] = await Promise.all([page.waitForEvent('download', {timeout:8000}), page.click('[data-act="xlsx"]')]);
+  ok(/\.xlsx$/.test(xd.suggestedFilename()) && await page.evaluate(() => !!window.XLSX), 'al exportar se carga Excel y baja el archivo');
+  await page.click('[data-act="help"]'); await page.waitForSelector('.pol'); ok((await page.textContent('.pol')).includes('Atajos del teclado'), 'la ayuda "Cómo se hace" se abre'); await page.click('[data-act="mclose"]'); await page.waitForTimeout(300);
   // modo oscuro, políticas de uso, rollos
   const th0 = await page.evaluate(() => document.documentElement.dataset.theme || 'auto');
   await page.click('#themebtn'); const th1 = await page.evaluate(() => document.documentElement.dataset.theme);
@@ -100,7 +112,7 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.click('[data-act="mclose"]').catch(() => {}); await page.waitForTimeout(300);
 
   // descuento: exige el código del administrador y el servidor lo comprueba
-  await page.click('[data-add="pop"]'); await page.click('[data-act="discask"]'); await page.waitForSelector('#apin');
+  await page.click('[data-add="pop"]'); await page.click('[data-act="omenu"]'); await page.click('[data-act="discask"]'); await page.waitForSelector('#apin');
   await page.fill('#apin', '0000'); await page.click('[data-act="authgo"]'); await page.waitForTimeout(400);
   ok((await page.textContent('#toast')).includes('incorrecto'), 'descuento con código malo se rechaza');
   await page.fill('#apin', '1234'); await page.click('[data-act="authgo"]'); await page.waitForSelector('#disc'); await page.fill('#disc', '10'); await page.waitForTimeout(200);
@@ -127,7 +139,7 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   // cerrar el día y mandar el resumen por WhatsApp
   await page.fill('#counted', '1660'); await page.fill('#cwho', '4321').catch(() => {}); await page.click('[data-act="closeday"]'); await page.waitForTimeout(900);
   await page.evaluate(() => { window.__wa = ''; window.open = u => { window.__wa = u; return null; }; });
-  await page.click('[data-act="wa"]'); await page.waitForTimeout(200);
+  await page.click('[data-act="wamenu"]'); await page.click('.dlg [data-act="wa"], #modal [data-act="wa"]'); await page.waitForTimeout(200);
   const wurl = await page.evaluate(() => window.__wa);
   ok(/wa\.me/.test(wurl) && decodeURIComponent(wurl).includes('Cierre del') && decodeURIComponent(wurl).includes('Ventas:'), 'el resumen de WhatsApp se arma con los totales: ' + decodeURIComponent(wurl).slice(0, 140).replace(/\n/g, ' | '));
   await page.locator('#outbtn').click(); await page.waitForSelector('#g-mail', {timeout:5000});
