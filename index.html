@@ -25,34 +25,89 @@
   --f-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
   --f-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
-  --bg:#F6F6F7; --card:#FFFFFF; --soft:#EFEFF1; --ink:#1B1B1F; --muted:#66666E; --line:#E2E2E7;
-  --accent:#D91F63; --on-accent:#FFFFFF;
-  --pay:#D91F63; --on-pay:#FFFFFF;
-  --good:#1E7A49; --warn:#955700; --bad:#BE3228;
-  --hdr:#FFFFFF; --on-hdr:#1B1B1F; --hdr-ok:#1E7A49; --hdr-wait:#955700; --hdr-bad:#BE3228;
-  --paper:#FFFFFF; --paper-ink:#1B1B1B; --paper-line:#BDBDBD;
-  --h-helados:#E5568B; --h-frio:#2E8AD8; --h-paletas:#EF8A25; --h-palomitas:#DDAE10; --h-algodon:#A576E4; --h-extras:#3FA874;
-  --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);
-  --r:14px; --bar:68px;
+  --bg:#F3F6FB;
+  --card:#FFFFFF;
+  --soft:#E6ECF7;
+  --ink:#14213D;
+  --muted:#4F5E7A;
+  --line:#DAE2F0;
+  --accent:#2F6BDB;
+  --on-accent:#FFFFFF;
+  --pay:#2F6BDB;
+  --on-pay:#FFFFFF;
+  --good:#1E7A49;
+  --warn:#955700;
+  --bad:#BE3228;
+  --hdr:#14213D;
+  --on-hdr:#EEF3FF;
+  --hdr-ok:#7FE0AE;
+  --hdr-wait:#F3C46B;
+  --hdr-bad:#FF9C92;
+  --paper:#FFFFFF;
+  --paper-ink:#1B1B1B;
+  --paper-line:#BDBDBD;
+  --h-helados:#F0508C;
+  --h-frio:#3F9BEA;
+  --h-paletas:#FF9433;
+  --h-palomitas:#F2B90C;
+  --h-algodon:#A67CF0;
+  --h-extras:#2FB886;
+  --shadow:0 1px 2px rgba(20,33,61,.05),0 8px 22px rgba(20,33,61,.07);
+  --r:18px;
+  --bar:68px;
   color-scheme:light;
+  --hue:var(--accent);
+  --swirl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 12m0-1.2a1.2 1.2 0 0 1 2.4 0a3.6 3.6 0 0 1-7.2 0a6 6 0 0 1 12 0a8.4 8.4 0 0 1-16.8 0a10.8 10.8 0 0 1 21.6 0' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#131315; --card:#1C1C20; --soft:#17171A; --ink:#F3F3F5; --muted:#A9A9B2; --line:#303036;
-    --accent:#FF7DA6; --on-accent:#2A0E19; --pay:#FF7DA6; --on-pay:#2A0E19;
-    --good:#5ED39B; --warn:#F0B24D; --bad:#FF8F85;
-    --hdr:#0E0E10; --on-hdr:#F3F3F5; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
-    --paper:#FFFFFF; --paper-ink:#1B1B1B; --paper-line:#BDBDBD;
+    --bg:#0B1220;
+    --card:#121B2E;
+    --soft:#182340;
+    --ink:#E8EEFB;
+    --muted:#9AA9C7;
+    --line:#26334F;
+    --accent:#6C9BFF;
+    --on-accent:#0B1220;
+    --pay:#6C9BFF;
+    --on-pay:#0B1220;
+    --good:#5ED39B;
+    --warn:#F0B24D;
+    --bad:#FF8F85;
+    --hdr:#070C17;
+    --on-hdr:#E8EEFB;
+    --hdr-ok:#7FE0AE;
+    --hdr-wait:#F3C46B;
+    --hdr-bad:#FF9C92;
+    --paper:#FFFFFF;
+    --paper-ink:#1B1B1B;
+    --paper-line:#BDBDBD;
     --shadow:0 1px 2px rgba(0,0,0,.4);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#131315; --card:#1C1C20; --soft:#17171A; --ink:#F3F3F5; --muted:#A9A9B2; --line:#303036;
-  --accent:#FF7DA6; --on-accent:#2A0E19; --pay:#FF7DA6; --on-pay:#2A0E19;
-  --good:#5ED39B; --warn:#F0B24D; --bad:#FF8F85;
-  --hdr:#0E0E10; --on-hdr:#F3F3F5; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
-  --paper:#FFFFFF; --paper-ink:#1B1B1B; --paper-line:#BDBDBD;
+  --bg:#0B1220;
+  --card:#121B2E;
+  --soft:#182340;
+  --ink:#E8EEFB;
+  --muted:#9AA9C7;
+  --line:#26334F;
+  --accent:#6C9BFF;
+  --on-accent:#0B1220;
+  --pay:#6C9BFF;
+  --on-pay:#0B1220;
+  --good:#5ED39B;
+  --warn:#F0B24D;
+  --bad:#FF8F85;
+  --hdr:#070C17;
+  --on-hdr:#E8EEFB;
+  --hdr-ok:#7FE0AE;
+  --hdr-wait:#F3C46B;
+  --hdr-bad:#FF9C92;
+  --paper:#FFFFFF;
+  --paper-ink:#1B1B1B;
+  --paper-line:#BDBDBD;
   --shadow:0 1px 2px rgba(0,0,0,.4);
   color-scheme:dark;
 }
@@ -421,26 +476,6 @@ button,a,select,input,.tile,.go{touch-action:manipulation}
 /* ═══ Identidad Un Momento Rolled ═══
    Paleta azul noche: encabezado y tinta azul marino, fondo blanco azulado, acento azul; el rosa del logo queda en el logo y en los helados.
    cada categoría con su color e ícono, y el espiral del helado enrollado como marca de agua. */
-:root{
-  --f-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
-  --bg:#F3F6FB; --card:#FFFFFF; --soft:#E6ECF7; --ink:#14213D; --muted:#4F5E7A; --line:#DAE2F0;
-  --accent:#2F6BDB; --on-accent:#FFFFFF; --pay:#2F6BDB; --on-pay:#FFFFFF;
-  --hdr:#14213D; --on-hdr:#EEF3FF; --hdr-ok:#7FE0AE; --hdr-wait:#F3C46B; --hdr-bad:#FF9C92;
-  --h-helados:#F0508C; --h-frio:#3F9BEA; --h-paletas:#FF9433; --h-palomitas:#F2B90C; --h-algodon:#A67CF0; --h-extras:#2FB886;
-  --shadow:0 1px 2px rgba(20,33,61,.05),0 8px 22px rgba(20,33,61,.07);
-  --hue:var(--accent); --r:18px; --swirl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 12m0-1.2a1.2 1.2 0 0 1 2.4 0a3.6 3.6 0 0 1-7.2 0a6 6 0 0 1 12 0a8.4 8.4 0 0 1-16.8 0a10.8 10.8 0 0 1 21.6 0' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0B1220; --card:#121B2E; --soft:#182340; --ink:#E8EEFB; --muted:#9AA9C7; --line:#26334F;
-    --accent:#6C9BFF; --on-accent:#0B1220; --pay:#6C9BFF; --on-pay:#0B1220;
-    --hdr:#070C17; --on-hdr:#E8EEFB; --shadow:0 1px 2px rgba(0,0,0,.4);
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0B1220; --card:#121B2E; --soft:#182340; --ink:#E8EEFB; --muted:#9AA9C7; --line:#26334F;
-  --accent:#6C9BFF; --on-accent:#0B1220; --pay:#6C9BFF; --on-pay:#0B1220; --hdr:#070C17; --on-hdr:#E8EEFB;
-}
 body{background:var(--bg)}
 .num,.stat b,.line .amt,.step output,.tile .pr,.cstrip .cs-kv b{font-family:var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .num{font-weight:700}
@@ -754,6 +789,7 @@ let raf = 0, pending = false, pointerDown = false;
 const isEditing = () => { const a = document.activeElement; return !!a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox' && $('#view').contains(a); };
 const canPaint = () => !pointerDown && !isEditing();
 function render(){
+  if (!S.abT && S.db && allLoaded()) S.abT = setTimeout(autoBackup, 5000);   // una sola vez por carga
   if (raf) return;
   raf = requestAnimationFrame(() => { raf = 0; if (canPaint()) paint(); else pending = true; });
 }
@@ -801,7 +837,8 @@ function paintHeader(){
   st.dataset.s = state;
   st.textContent = label;
   let b = '';
-  if (!net.online) b = 'Sin internet. Puedes seguir cobrando: lo que guardes se queda en este equipo y se envía solo cuando vuelva la conexión.' + (net.pending ? ' <b>Pendientes de enviar: ' + net.pending + '.</b>' : '') + ' No cierres la sesión ni borres los datos del navegador hasta que se envíe.';
+  if (S.newVer && net.online && !net.pending) b = 'Hay una versión nueva de la caja. <button class="btn pri sm" data-act="reload">Actualizar</button>';
+  else if (!net.online) b = 'Sin internet. Puedes seguir cobrando: lo que guardes se queda en este equipo y se envía solo cuando vuelva la conexión.' + (net.pending ? ' <b>Pendientes de enviar: ' + net.pending + '.</b>' : '') + ' No cierres la sesión ni borres los datos del navegador hasta que se envíe.';
   else if (net.failed) b = net.failed + ' cambio' + (net.failed === 1 ? '' : 's') + ' guardado' + (net.failed === 1 ? '' : 's') + ' sin internet no lo aceptó el servidor (por ejemplo, una autorización vencida). Revisa las ventas del día. <button class="btn sm" data-act="dropfailed">Entendido</button>';
   else if (S.loadFailed) b = 'No logramos conectar con los datos. Revisa el internet; lo que ves puede estar desactualizado.';
   else if (S.err) b = 'Hay un problema con los datos de la caja (' + esc(S.err) + '). Recarga la página.';
@@ -1946,7 +1983,7 @@ function loadXLSX(){
 }
 function backupBlock(){
   const lb = +S.shop.lastBackup || 0;
-  return `<section class="sec"><h2>Respaldo de los datos</h2><p class="muted">Descarga una copia de todo: ventas, productos, inventario, cierres y ajustes. Guárdala en tu correo o en una memoria USB. ${lb ? 'Último respaldo: <b>' + esc(new Date(lb).toLocaleString('es-DO')) + '</b>.' : '<b>Todavía no has descargado ninguno.</b>'} Se recomienda una vez por semana.</p>
+  return `<section class="sec"><h2>Respaldo de los datos</h2><p class="muted">Descarga una copia de todo: ventas, productos, inventario, cierres y ajustes. Guárdala en tu correo o en una memoria USB. Cada 7 días se descarga sola al entrar el administrador. ${lb ? 'Último respaldo: <b>' + esc(new Date(lb).toLocaleString('es-DO')) + '</b>.' : '<b>Todavía no has descargado ninguno.</b>'} Se recomienda una vez por semana.</p>
     <div class="rowf"><button class="btn pri" data-act="backup">Descargar respaldo completo</button></div></section>`;
 }
 async function fetchAllDocs(){
@@ -1958,17 +1995,24 @@ async function fetchAllDocs(){
   }
   return out;
 }
-async function doBackup(){
+async function doBackup(auto){
   if (!S.dl) return;
-  toast('Preparando el respaldo…');
+  if (!auto) toast('Preparando el respaldo…');
   try {
     const rows = await fetchAllDocs(), stamp = dayKey();
     {
       await S.dl.save({filename:'respaldo-un-momento-rolled-' + stamp + '.json', data:JSON.stringify({app:'Un Momento Rolled', version:1, at:new Date().toISOString(), count:rows.length, docs:rows})});
     }
     await S.db.doc('settings/shop').update({lastBackup:Date.now()}).catch(() => {});
-    toast('Respaldo descargado (' + rows.length + ' registros).');
-  } catch (e) { if (!e || e.code !== 'declined') toast('No se pudo preparar el respaldo. Revisa el internet.'); }
+    toast(auto ? 'Respaldo semanal descargado automáticamente (' + rows.length + ' registros). Está en Descargas.' : 'Respaldo descargado (' + rows.length + ' registros).');
+  } catch (e) { if (!auto && (!e || e.code !== 'declined')) toast('No se pudo preparar el respaldo. Revisa el internet.'); }
+}
+/* Una vez por semana, al entrar el administrador con internet, el respaldo se descarga solo. */
+function autoBackup(){
+  if (S.autoBk || !S.isAdmin || !S.loaded.shop || !S.net || !S.net.online || S.net.pending) return;
+  const lb = +S.shop.lastBackup || 0;
+  if (Date.now() - lb < 7 * 864e5 || Date.now() - store.get('autobk', 0) < 864e5) return;   // como mucho un intento automático al día
+  S.autoBk = true; store.set('autobk', Date.now()); doBackup(true).finally(() => { S.autoBk = false; });
 }
 function productosHTML(){
   const rows = sortedProducts().map(p => `<tr>
@@ -2375,6 +2419,7 @@ const A = {
   wkwa(){ const R = S.repR; if (!R || S.rep.loading) { toast('Espera a que carguen los datos del reporte.'); return; } closeModal(); openWA(periodSummary(R)); },
   wkgo(){ store.set('wkseen', dayKey()); S.rk = '7d'; location.hash = '#reportes'; },
   backup(){ doBackup(); },
+  reload(){ location.reload(); },
   pcopen(){ S.sheet = false; S.pc = {supplier:'', paid:false, lines:[], ref:S.db.collection('purchases').doc()}; openModal(pcHTML()); },
   pcadd(){
     pcRead();
@@ -2731,7 +2776,7 @@ async function boot(){
   S.net = S.db.status(); S.db.onStatus(st => { S.net = st; paintHeader(); });
   S.dl = {save: async ({filename, data}) => {
     const blob = new Blob([data], {type: /\.xlsx$/.test(filename) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : /\.csv$/.test(filename) ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
   }};
   S.sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') setTimeout(() => location.reload(), 0); });
@@ -2747,7 +2792,25 @@ document.addEventListener('pointerdown', bump, true);
 document.addEventListener('keydown', bump, true);
 try { const ro = new ResizeObserver(() => document.documentElement.style.setProperty('--hh', $('.hdr').offsetHeight + 'px')); ro.observe($('.hdr')); } catch {}
 boot();
-if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+/* Aviso de versión nueva: los equipos pasan días con la caja abierta, así que cada cierto rato se pregunta al servidor
+   si la página cambió. Nunca se recarga sola (podría haber un cobro a medias): solo se ofrece el botón. */
+let verTag = null, swReg = null;
+async function checkVersion(){
+  try {
+    if (swReg) swReg.update().catch(() => {});
+    const r = await fetch('index.html', {method:'HEAD', cache:'no-store'}); if (!r.ok) return;
+    const tag = r.headers.get('etag') || r.headers.get('last-modified'); if (!tag) return;
+    if (verTag === null) verTag = tag; else if (tag !== verTag && !S.newVer) { S.newVer = true; paintHeader(); }
+  } catch {}
+}
+if ('serviceWorker' in navigator) addEventListener('load', () => {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !S.newVer) { S.newVer = true; paintHeader(); } });
+  navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(() => {});
+});
+addEventListener('load', checkVersion);
+setInterval(() => { checkVersion(); autoBackup(); }, 30 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 })();
 </script>
 </body>

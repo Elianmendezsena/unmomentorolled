@@ -2,7 +2,8 @@
 const { chromium } = require('playwright'); const fs = require('fs'), http = require('http'), path = require('path');
 const ROOT = path.join(__dirname, '..'); const ok = (c, m) => { console.log((c ? 'OK   ' : 'FALLO') + ' ' + m); if (!c) process.exitCode = 1; };
 const MIME = {'.html':'text/html', '.js':'text/javascript', '.png':'image/png', '.svg':'image/svg+xml', '.webmanifest':'application/manifest+json'};
-const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, b) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, {'content-type':MIME[path.extname(f)] || 'application/octet-stream'}); r.end(b); } }); });
+const TAG = {v:'"v1"'};
+const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, b) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, {'content-type':MIME[path.extname(f)] || 'application/octet-stream', 'etag':TAG.v}); r.end(b); } }); });
 const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') + `
 ;(function(){
   const k = window.sessionStorage.getItem('fk');                   // el "servidor" vive en localStorage para sobrevivir a recargas
@@ -13,7 +14,7 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
     const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
     f.seed('products', 'pop', {name:'Palomitas', cat:'palomitas', price:60, order:40, active:true});
     f.seed('products', 'cono', {name:'Helado 1 bola', cat:'helados', price:60, order:10, active:true, scoops:1});
-    f.seed('settings', 'shop', {name:'Heladería', footer:'', cashiers:['Ana']});
+    f.seed('settings', 'shop', {name:'Heladería', footer:'', cashiers:['Ana'], lastBackup:Date.now()});
     f.seed('days', today, {day:today, fondo:1500, opened:true, openedAt:Date.now() - 3000e3, openedBy:'Ana'});
   }
   const persist = () => localStorage.setItem('fake-db', JSON.stringify({rows:[...f.rows.values()], state:{pin:f.state.pin, codes:f.state.codes}}));
@@ -37,6 +38,20 @@ const stub = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8') +
   await page.fill('#g-pass', 'admin123'); await page.click('#g-go'); await page.waitForSelector('#gate', {state:'hidden'}); await page.waitForTimeout(800);
   ok((await page.textContent('#nav')).includes('Ajustes'), 'el administrador ve Ajustes');
   ok((await page.textContent('#status')).length > 0 && await page.locator('#view').isVisible(), 'la app carga los datos');
+
+  // aviso de versión nueva y respaldo automático semanal
+  ok(!(await page.textContent('#banner')).includes('versión nueva'), 'sin cambios en el servidor no hay aviso de versión');
+  TAG.v = '"v2"'; await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await page.waitForTimeout(600);
+  ok((await page.textContent('#banner')).includes('versión nueva') && await page.locator('[data-act="reload"]').isVisible(), 'al cambiar la página en el servidor aparece "Hay una versión nueva" con el botón Actualizar');
+  await Promise.all([page.waitForEvent('load'), page.click('[data-act="reload"]')]); await page.waitForTimeout(800);
+  ok(!(await page.textContent('#banner')).includes('versión nueva'), 'después de actualizar el aviso desaparece');
+  await page.waitForTimeout(6000);
+  ok(await page.evaluate(() => Date.now() - window.__f.get('settings', 'shop').lastBackup < 60e3 * 60), 'con un respaldo reciente no se descarga otro solo');
+  await page.evaluate(() => { window.__f.seed('settings', 'shop', {...window.__f.get('settings', 'shop'), lastBackup:Date.now() - 8 * 864e5}); window.__persist(); });
+  const [adl] = await Promise.all([page.waitForEvent('download', {timeout:15000}), page.reload()]);
+  ok(/^respaldo-un-momento-rolled-/.test(adl.suggestedFilename()), 'pasados 7 días el respaldo se descarga solo al entrar el administrador');
+  await page.waitForTimeout(800);
+  ok(await page.evaluate(() => Date.now() - window.__f.get('settings', 'shop').lastBackup < 60e3), 'y queda anotada la fecha nueva');
 
   // documentos legales, atajo de teclado y foco dentro de los cuadros
   await page.goto(base + '#caja'); await page.waitForTimeout(500);
